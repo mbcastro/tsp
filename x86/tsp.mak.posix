@@ -1,0 +1,37 @@
+TSPDIR=$(HOME)/pm2/marcel/examples/tsp
+
+OBJ=$(TSPDIR)/posix/obj
+SRC=$(TSPDIR)
+BIN=$(TSPDIR)/posix/bin
+
+ARCH= -O6
+LIBS=-lpthread
+
+CC2=gcc -c $(ARCH) -o $@ $(SRC)/$(@F:.o=.c)
+
+LINK=gcc -o $@ $(OBJ)/$(@F).o 
+
+# executables :
+
+$(BIN)/tsp: $(OBJ)/tsp.o $(OBJ)/job.o $(OBJ)/main.o $(LIB)
+	$(LINK) $(OBJ)/job.o  $(OBJ)/main.o -lpthread -lm
+
+# objects :
+
+
+$(OBJ)/tsp.o: $(SRC)/tsp.c $(SRC)/types.h $(SRC)/tsp.h
+	$(CC2) -DMT
+
+$(OBJ)/main.o: $(SRC)/main.c $(SRC)/types.h $(SRC)/tsp.h 
+	$(CC2) -DMT
+
+$(OBJ)/job.o: $(SRC)/job.c $(SRC)/types.h $(SRC)/tsp.h 
+	$(CC2) -DMT 
+
+
+
+
+# clean
+
+clean:
+	rm -rf $(OBJ)/*.o $(BIN)/*
