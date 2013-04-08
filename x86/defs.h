@@ -1,9 +1,14 @@
-#define MAXE	30
+#ifndef __DEFS_H
+#define __DEFS_H
+
+#define MAX_TOWNS	30
+#define MAX_HOPS	3
+#define MAX_GRID_X	100
+#define MAX_GRID_Y	100
 
 #ifdef MT 
 
 #include <pthread.h>
-
 #define MUTEX_CREATE(m)	pthread_mutex_t m
 #define MUTEX_INIT(m) 	pthread_mutex_init(&m, NULL)
 #define MUTEX_LOCK(m) 	pthread_mutex_lock(&m)
@@ -18,42 +23,10 @@
 
 #endif
 
-typedef struct {
-	int ToCity ;
-	int dist ;
-} pair_t ;
+#ifdef DEBUG
+#define LOG printf
+#else
+#define LOG(...) 
+#endif
 
-typedef pair_t DistArray_t [MAXE] ;
-typedef DistArray_t DTab_t [MAXE] ;
-
-typedef struct {
-	int NrTowns ;
-	DTab_t dst ;
-} DistTab_t ;
-
-/* Job types */
-
-typedef int Path_t [MAXE] ;
-
-typedef struct {
-	int len ;
-	Path_t path ;
-} Job_t ;
-
-/* TSQ Queue */
-
-typedef struct Maillon {
-	Job_t tsp_job ;
-	struct Maillon *next ;
-} Maillon ;
-
-typedef struct {
-	Maillon *first ;
-	Maillon *last ;
-	int end;
-	MUTEX_CREATE(mutex);
-} TSPqueue ;
-
-
-
-
+#endif

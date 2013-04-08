@@ -1,24 +1,18 @@
+#ifndef __TSP_H
+#define __TSP_H
 
-/*
- * PM2: Parallel Multithreaded Machine
- * Copyright (C) 2001 "the PM2 team" (see AUTHORS file)
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
- * your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * General Public License for more details.
- */
+#include "job.h"
 
-extern int tsp (int hops, int len, Path_t path, int *cuts, int num_worker) ;
+typedef struct {
+	int n_towns;
+	int to_city[MAX_TOWNS][MAX_TOWNS];
+	int dist [MAX_TOWNS][MAX_TOWNS];
+} distance_matrix_t;
 
-extern void distributor (int hops, int len, Path_t path, TSPqueue *q, DistTab_t distance) ;
+void init_tsp(distance_matrix_t *distance_matrix, job_queue_t *q);
+void tsp (int hops, int len, path_t *path, int *cuts, int num_worker);
+void distributor (int hops, int len, path_t *path);
+void generate_jobs (void);
+void *worker (void *num_worker);
 
-extern void GenerateJobs () ;
-
-
-extern void *worker (void *) ;
+#endif

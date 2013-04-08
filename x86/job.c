@@ -1,37 +1,27 @@
-#include "types.h"
 #include <stdlib.h>
+#include <string.h>
 
-void init_queue (TSPqueue *q) {
-	q->first = 0;
-	q->last = 0;
-	q->end = 0;
+#include "job.h"
+
+void init_queue (job_queue_t *q) {
+	q->first = NULL;
+	q->last = NULL;
+	MUTEX_INIT(q->mutex);
 }
 
-
-int empty_queue (TSPqueue q) {
-	int b;
-
-	MUTEX_LOCK(q.mutex);
-	b = ((q.first == 0) && (q.end == 1));
-	MUTEX_UNLOCK(q.mutex);
-
-	return b;
-}
-
-
-void add_job (TSPqueue *q, Job_t j) {
-	Maillon *ptr;
+void add_job (job_queue_t *q, job_t j) {
+	job_queue_node_t *ptr;
 	unsigned int i;
 
-	ptr = (Maillon *) malloc (sizeof (Maillon));
-	ptr->next = 0;
+	ptr = (job_queue_node_t *) malloc (sizeof (job_queue_node_t));
+	ptr->next = NULL;
 	ptr->tsp_job.len=j.len;
-	for (i=0;i<MAXE;i++)
+	for (i = 0; i < MAX_TOWNS; i++)
 		ptr->tsp_job.path [i] = j.path [i];
 
 	MUTEX_LOCK(q->mutex);
 
-	if (q->first   == 0)
+	if (q->first == NULL)
 		q->first = q->last = ptr;
 	else {
 		q->last->next = ptr;
@@ -42,12 +32,12 @@ void add_job (TSPqueue *q, Job_t j) {
 }
 
 
-int get_job (TSPqueue *q, Job_t *j) {
-	Maillon *ptr;
-	unsigned int i;
+int get_job (job_queue_t *q, job_t *j) {
+	job_queue_node_t *ptr;
+	// unsigned int i;
 
 	MUTEX_LOCK(q->mutex);
-	if (q->first == 0) {
+	if (q->first == NULL) {
 		MUTEX_UNLOCK(q->mutex);
 		return 0;
 	}
@@ -55,21 +45,14 @@ int get_job (TSPqueue *q, Job_t *j) {
 	ptr = q->first;
 
 	q->first = ptr->next;
-	if (q->first == 0)
-		q->last = 0;
+	if (q->first == NULL)
+		q->last = NULL;
 
 	MUTEX_UNLOCK(q->mutex);
 
-	j->len = ptr->tsp_job.len;
-	for (i=0;i<MAXE;i++)
-		j->path[i] = ptr->tsp_job.path[i];
+	memcpy(j, &ptr->tsp_job, sizeof(job_t));
 
 	free (ptr);
 	return 1;
 } 
 
-void no_more_jobs (TSPqueue *q) {
-	MUTEX_LOCK(q->mutex);
-	q->end = 1;
-	MUTEX_UNLOCK(q->mutex);
-}
