@@ -34,7 +34,6 @@ void add_job (job_queue_t *q, job_t j) {
 
 int get_job (job_queue_t *q, job_t *j) {
 	job_queue_node_t *ptr;
-	// unsigned int i;
 
 	MUTEX_LOCK(q->mutex);
 	if (q->first == NULL) {

@@ -14,11 +14,12 @@ void genmap (distance_matrix_t* distance_matrix, int seed) {
 	int tempdist [n];	
 	int i, j, k, city = 0;
 	int dx, dy, tmp;
-	srand (seed);
+
+	RAND_INIT(seed);
 
 	for (i = 0; i < n; i++) {
-		x[i] = rand () % MAX_GRID_X;
-		y[i] = rand () % MAX_GRID_Y;
+		x[i] = RAND_NEXT() % MAX_GRID_X;
+		y[i] = RAND_NEXT() % MAX_GRID_Y;
 	}
 
 	for (i = 0; i < n; i++) {
@@ -94,7 +95,6 @@ void do_work (int nb_workers) {
 
 
 int main (int argc, char **argv) {
-
 	int nb_workers;
 	job_queue_t q;
 	distance_matrix_t distance;
@@ -118,7 +118,8 @@ int main (int argc, char **argv) {
 	do_work(nb_workers);
 	end = get_time();
 
-	diff = diff_time (start, end);	
+	diff = diff_time (start, end);
+	tsp_log_shortest_path();
 	printf("time = %lu\n", diff);
 	return 0;
 }

@@ -100,3 +100,7 @@ void *worker (void *num_worker_par) {
 	LOG ("Worker [%2lu] terminates, %4d jobs done with %4d cuts.\n", num_worker, jobcount, cuts);
 	return (void *) 0;
 }
+
+void tsp_log_shortest_path (void) {
+	LOG ("Shortest path len = %d\n", minimun_distance.distance);
+}

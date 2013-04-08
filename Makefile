@@ -4,7 +4,7 @@ OBJ=$(TSPDIR)/obj
 SRC=$(TSPDIR)
 BIN=$(TSPDIR)/bin
 
-ARCH= -DMT -O3 -DDEBUG
+ARCH= -DMT -O3 -DDEBUG -g
 LIBS=-lpthread
 CC2=cc -c $(ARCH) -o $@ $(SRC)/$(@F:.o=.c) -Wall -pthread 
 
@@ -14,8 +14,8 @@ LINK=cc -pthread -o $@ $(OBJ)/$(@F).o
 
 # executables :
 
-$(BIN)/tsp: $(OBJ)/tsp.o $(OBJ)/job.o $(OBJ)/main.o $(OBJ)/timer.o
-	$(LINK) $(OBJ)/job.o  $(OBJ)/main.o $(OBJ)/timer.o -lm
+$(BIN)/tsp: $(OBJ)/tsp.o $(OBJ)/job.o $(OBJ)/main.o $(OBJ)/timer.o $(OBJ)/defs.o
+	$(LINK) $(OBJ)/job.o  $(OBJ)/main.o $(OBJ)/timer.o $(OBJ)/defs.o -lm
 
 # objects :
 
@@ -31,6 +31,9 @@ $(OBJ)/job.o: $(SRC)/job.c
 
 $(OBJ)/timer.o: $(SRC)/timer.c 
 	$(CC2)  
+
+$(OBJ)/defs.o: $(SRC)/defs.c 
+	$(CC2)  	
 
 
 # clean

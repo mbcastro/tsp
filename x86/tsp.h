@@ -14,5 +14,6 @@ void tsp (int hops, int len, path_t *path, int *cuts, int num_worker);
 void distributor (int hops, int len, path_t *path);
 void generate_jobs (void);
 void *worker (void *num_worker);
+void tsp_log_shortest_path (void);
 
 #endif
