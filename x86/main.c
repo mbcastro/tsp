@@ -95,32 +95,37 @@ void do_work (int nb_workers) {
 
 
 int main (int argc, char **argv) {
-	int nb_workers;
+	int n_workers, n_towns, seed;
 	job_queue_t q;
 	distance_matrix_t distance;
 
-	unsigned long start, end, diff;
+	unsigned long start, end, end_generation, diff, diff_generation;
 
 	if (argc != 4) {
 		fprintf (stderr, "Usage: %s <nb_threads > <ncities> <seed> \n",argv[0]);
 		exit (1);
 	}
 
-	nb_workers = atoi (argv[1]);
-	LOG ("nb_threads = %3d ncities = %3d\n", nb_workers, atoi(argv[2]));
+	n_workers = atoi (argv[1]);
+	n_towns = atoi(argv[2]);
+	seed = atoi(argv[3]);
+
+	LOG ("nb_threads = %3d ncities = %3d\n", n_workers, n_towns);
 
 	init_time();
 	init_queue (&q);
-	init_distance (&distance, atoi(argv[2]), atoi(argv[3]));
-	init_tsp(&distance, &q);
-	generate_jobs ();
+	init_distance (&distance, n_towns, seed);
+	init_tsp(&distance, &q, n_workers, n_towns);
 	start = get_time();
-	do_work(nb_workers);
+	generate_jobs ();
+	end_generation = get_time();
+	do_work(n_workers);
 	end = get_time();
 
 	diff = diff_time (start, end);
+	diff_generation = diff_time(start, end_generation);
 	tsp_log_shortest_path();
-	printf("time = %lu\n", diff);
+	printf("time = %lu generation = %lu (Ratio %.4f)\n", diff, diff_generation, 100.0f * diff_generation / diff);
 	return 0;
 }
 

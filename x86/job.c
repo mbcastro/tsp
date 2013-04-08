@@ -15,11 +15,12 @@ void add_job (job_queue_t *q, job_t j) {
 
 	ptr = (job_queue_node_t *) malloc (sizeof (job_queue_node_t));
 	ptr->next = NULL;
-	ptr->tsp_job.len=j.len;
+	ptr->tsp_job.len = j.len;
 	for (i = 0; i < MAX_TOWNS; i++)
 		ptr->tsp_job.path [i] = j.path [i];
 
-	MUTEX_LOCK(q->mutex);
+	// The job generation is done sequentially
+	// MUTEX_LOCK(q->mutex);
 
 	if (q->first == NULL)
 		q->first = q->last = ptr;
@@ -28,7 +29,7 @@ void add_job (job_queue_t *q, job_t j) {
 		q->last = ptr;
 	}
 
-	MUTEX_UNLOCK(q->mutex);
+	// MUTEX_UNLOCK(q->mutex);
 }
 
 
