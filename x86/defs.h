@@ -12,10 +12,10 @@
 
 #ifdef CAS
 
-#define MUTEX_CREATE(m)	int m
+#define MUTEX_CREATE(m)	unsigned int m
 #define MUTEX_INIT(m) 	m = 0
-#define MUTEX_LOCK(m) 	while(!__sync_bool_compare_and_swap(&m, 0, 1))
-#define MUTEX_UNLOCK(m) while(!__sync_bool_compare_and_swap(&m, 1, 0))
+#define MUTEX_LOCK(m) 	while(__sync_lock_test_and_set(&m, 1))
+#define MUTEX_UNLOCK(m) __sync_lock_release(&m)	
 
 #else
 
@@ -30,8 +30,8 @@
 
 #define MUTEX_CREATE(m)	/* none */
 #define MUTEX_INIT(m)	/* none */
-#define MUTEX_LOCK(m)			/* none */
-#define MUTEX_UNLOCK(m)		/* none */
+#define MUTEX_LOCK(m)	/* none */
+#define MUTEX_UNLOCK(m)	/* none */
 
 #endif //MT
 
