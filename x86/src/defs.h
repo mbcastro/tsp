@@ -1,10 +1,10 @@
 #ifndef __DEFS_H
 #define __DEFS_H
 
-#define MAX_TOWNS	30
+#define MAX_TOWNS		30
 #define MIN_JOBS_THREAD 1000
-#define MAX_GRID_X	100
-#define MAX_GRID_Y	100
+#define MAX_GRID_X		100
+#define MAX_GRID_Y		100
 
 #ifdef MT 
 
