@@ -9,7 +9,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/x86/bin)
 file(GLOB source_files "src/*")
 
 # set general compilation flags
-set (CMAKE_C_FLAGS "-g -Wall -O3")
+set (CMAKE_C_FLAGS "-Wall -O6")
 
 # linker
 link_libraries("-lm -lpthread")

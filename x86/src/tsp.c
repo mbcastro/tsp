@@ -35,7 +35,7 @@ int present (int city, int hops, path_t *path) {
 	return 0;
 }
 
-void tsp (int hops, int len, path_t *path_ptr, unsigned long *cuts, int num_worker) {
+void tsp (int hops, int len, path_t *path, unsigned long *cuts, int num_worker) {
 	int i;
 	if (len >= minimun_distance.distance) {
 		(*cuts)++;
@@ -47,55 +47,50 @@ void tsp (int hops, int len, path_t *path_ptr, unsigned long *cuts, int num_work
 			minimun_distance.distance = len;
 			LOG ("worker[%d] finds path len = %3d :", num_worker, len);
 			for (i = 0; i < distance->n_towns; i++)
-				LOG ("%2d ", (*path_ptr)[i]);
+				LOG ("%2d ", (*path)[i]);
 			LOG ("\n");
 		}
 		MUTEX_UNLOCK(minimun_distance.mutex);
 	} else {
 		int city, me, dist;
-		me = (*path_ptr) [hops - 1];
+		me = (*path)[hops - 1];
 		for (i = 0; i < distance->n_towns; i++) {
-			city = distance->to_city[me][i];
-			if (!present (city, hops, path_ptr)) {
-				(*path_ptr)[hops] = city;
-				dist = distance->dist[me][i];
-				tsp (hops + 1, len + dist, path_ptr, cuts, num_worker);
+			city = distance->info[me][i].to_city;
+			if (!present (city, hops, path)) {
+				(*path)[hops] = city;
+				dist = distance->info[me][i].dist;
+				tsp (hops + 1, len + dist, path, cuts, num_worker);
 			}
 		}
 	}
 }
 
-unsigned long distributor (int hops, int len, path_t *path_ptr) {
+void distributor (int hops, int len, path_t *path) {
 	job_t j;
-	int i;
-	unsigned long n_jobs = 0;
+	int i;	
 	if (hops == max_hops) {
 		j.len = len;
 		for (i = 0; i < hops; i++)
-			j.path[i] = (*path_ptr)[i];
+			j.path[i] = (*path)[i];
 		add_job (queue, j);
-		n_jobs = 1;
 	} else {
 		int me, city, dist;
-		me = (*path_ptr) [hops - 1];
+		me = (*path)[hops - 1];
 		for (i = 0; i < distance->n_towns; i++) {
-			city = distance->to_city[me][i];
-			if (!present(city,hops, path_ptr)) {
-				(*path_ptr) [hops] = city;
-				dist = distance->dist[me][i];
-				n_jobs += distributor (hops + 1, len + dist, path_ptr);       
+			city = distance->info[me][i].to_city;
+			if (!present(city,hops, path)) {
+				(*path)[hops] = city;
+				dist = distance->info[me][i].dist;
+				distributor (hops + 1, len + dist, path);       
 			}
 		}
 	}
-	return n_jobs;
 }
 
 void generate_jobs () {
-	unsigned long n_jobs;
 	path_t path;
 	path [0] = 0;
-	n_jobs = distributor (1, 0, &path); 
-	LOG("Generated jobs: %lu\n", n_jobs); 
+	distributor (1, 0, &path);
 }
 
 void *worker (void *num_worker_par) {

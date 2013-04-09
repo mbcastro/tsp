@@ -38,8 +38,8 @@ void genmap (distance_matrix_t* distance_matrix, int seed) {
 				}
 			}
 			tempdist [city] = INT_MAX;
-			distance_matrix->to_city[i][j] = city;
-			distance_matrix->dist[i][j] = tmp;
+			distance_matrix->info[i][j].to_city = city;
+			distance_matrix->info[i][j].dist = tmp;
 		}
 	}
 }
@@ -58,7 +58,7 @@ void print_distance_matrix (distance_matrix_t *distance) {
 	for (i = 0; i<distance->n_towns; i++) {
 		LOG ("distance.dst [%1d]",i);
 		for (j = 0; j<distance->n_towns; j++) {
-			LOG (" [d:%2d, to:%2d] ", distance->dist[i][j], distance->to_city[i][j]);
+			LOG (" [d:%2d, to:%2d] ", distance->info[i][j].dist, distance->info[i][j].to_city);
 		}
 		LOG (";\n\n");
 	}
@@ -93,11 +93,13 @@ void do_work (int nb_workers) {
 
 }
 
+job_queue_t q1;
 
 int main (int argc, char **argv) {
 	int n_workers, n_towns, seed;
-	job_queue_t q;
-	distance_matrix_t distance;
+	job_queue_t q2;
+	job_queue_t *q = &q2;
+	distance_matrix_t *distance = (distance_matrix_t *)malloc(sizeof(distance_matrix_t));
 
 	unsigned long start, end, end_generation, diff, diff_generation;
 
@@ -113,9 +115,9 @@ int main (int argc, char **argv) {
 	LOG ("nb_threads = %3d ncities = %3d\n", n_workers, n_towns);
 
 	init_time();
-	init_queue (&q);
-	init_distance (&distance, n_towns, seed);
-	init_tsp(&distance, &q, n_workers, n_towns);
+	init_queue (q);
+	init_distance (distance, n_towns, seed);
+	init_tsp(distance, q, n_workers, n_towns);
 	start = get_time();
 	generate_jobs ();
 	end_generation = get_time();
@@ -126,6 +128,7 @@ int main (int argc, char **argv) {
 	diff_generation = diff_time(start, end_generation);
 	tsp_log_shortest_path();
 	printf("time = %lu generation = %lu (Ratio %.4f)\n", diff, diff_generation, 100.0f * diff_generation / diff);
+	free(distance);
 	return 0;
 }
 

@@ -3,7 +3,7 @@
 
 #include "defs.h"
 
-typedef int path_t [MAX_TOWNS];
+typedef int path_t[MAX_TOWNS];
 
 typedef struct {
 	int len;
