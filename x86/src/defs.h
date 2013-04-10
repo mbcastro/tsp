@@ -5,6 +5,7 @@
 #define MIN_JOBS_THREAD 1000
 #define MAX_GRID_X		100
 #define MAX_GRID_Y		100
+#define PAGE_SIZE		4096
 
 #ifdef MT 
 

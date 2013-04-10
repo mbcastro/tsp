@@ -1,2 +1,5 @@
 /.tags
 /.tags_sorted_by_file
+/CMakeFiles/
+/CMakeCache.txt
+/cmake_install.cmake

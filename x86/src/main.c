@@ -79,7 +79,6 @@ void do_work (int nb_workers) {
 
 	for (i = 0; i < nb_workers - 1; i++) {
 		pthread_create (&tids[i], NULL, worker, (void *)i);
-		LOG ("tid %x\n", (unsigned int)tids [i]);
 	}
 
 	worker ((void *)((long)nb_workers - 1));
@@ -93,14 +92,10 @@ void do_work (int nb_workers) {
 
 }
 
-job_queue_t q1;
-
 int main (int argc, char **argv) {
+	distance_matrix_t distance __attribute__ ((aligned (PAGE_SIZE)));
 	int n_workers, n_towns, seed;
-	job_queue_t q2;
-	job_queue_t *q = &q2;
-	distance_matrix_t *distance = (distance_matrix_t *)malloc(sizeof(distance_matrix_t));
-
+	job_queue_t q;
 	unsigned long start, end, end_generation, diff, diff_generation;
 
 	if (argc != 4) {
@@ -115,9 +110,9 @@ int main (int argc, char **argv) {
 	LOG ("nb_threads = %3d ncities = %3d\n", n_workers, n_towns);
 
 	init_time();
-	init_queue (q);
-	init_distance (distance, n_towns, seed);
-	init_tsp(distance, q, n_workers, n_towns);
+	init_queue (&q);
+	init_distance (&distance, n_towns, seed);
+	init_tsp(&distance, &q, n_workers, n_towns);
 	start = get_time();
 	generate_jobs ();
 	end_generation = get_time();
@@ -128,7 +123,7 @@ int main (int argc, char **argv) {
 	diff_generation = diff_time(start, end_generation);
 	tsp_log_shortest_path();
 	printf("time = %lu generation = %lu (Ratio %.4f)\n", diff, diff_generation, 100.0f * diff_generation / diff);
-	free(distance);
+	
 	return 0;
 }
 

@@ -99,8 +99,6 @@ void *worker (void *num_worker_par) {
 	job_t job;
 	unsigned long cuts = 0;
 
-	LOG ("Worker [%2lu] starting \n", num_worker);
-
 	while (get_job (queue, &job)) {
 		jobcount++;
 		tsp (max_hops, job.len, &job.path, &cuts, num_worker);
