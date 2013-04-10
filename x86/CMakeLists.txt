@@ -8,11 +8,17 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/x86/bin)
 # source files
 file(GLOB source_files "src/*")
 
+# linker
+link_libraries("-lm -lpthread")
+
 # set general compilation flags
 set (CMAKE_C_FLAGS "-Wall -O6")
 
-# linker
-link_libraries("-lm -lpthread")
+#Gets the page size for the current architecture
+execute_process(COMMAND  ${CMAKE_BINARY_DIR}/utils/bin/getpagesize 
+	        OUTPUT_VARIABLE PG_SZ)
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DPAGE_SIZE=4096")
+
 
 # add debug flag if needed (example: cmake -DDEBUG:STRING=1 .)
 if (DEBUG) 
