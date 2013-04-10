@@ -54,4 +54,3 @@ inline unsigned int simple_rng_next();
 #endif //DEF_RAND
 
 #endif //__DEFS_H
-	

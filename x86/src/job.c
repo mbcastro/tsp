@@ -55,4 +55,3 @@ int get_job (job_queue_t *q, job_t *j) {
 	free (ptr);
 	return 1;
 } 
-
