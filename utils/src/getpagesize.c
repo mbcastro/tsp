@@ -3,6 +3,6 @@
 
 int main (void) {
   unsigned long sz = sysconf(_SC_PAGESIZE);
-  printf("%lu\n", sz);
+  printf("%lu", sz);
   return 0;
 }

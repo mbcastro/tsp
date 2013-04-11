@@ -98,6 +98,8 @@ int main (int argc, char **argv) {
 	job_queue_t q;
 	unsigned long start, end, end_generation, diff, diff_generation;
 
+	CHECK_PAGE_SIZE();
+	
 	if (argc != 4) {
 		fprintf (stderr, "Usage: %s <nb_threads > <ncities> <seed> \n",argv[0]);
 		exit (1);

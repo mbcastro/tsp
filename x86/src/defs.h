@@ -1,10 +1,15 @@
 #ifndef __DEFS_H
 #define __DEFS_H
 
+#include <unistd.h>
+
 #define MAX_TOWNS		30
 #define MIN_JOBS_THREAD 1000
 #define MAX_GRID_X		100
 #define MAX_GRID_Y		100
+
+
+#define CHECK_PAGE_SIZE() if (PAGE_SIZE != sysconf(_SC_PAGESIZE)) printf("WARNING: Page size is different from the compilation parameter\n")
 
 #ifdef MT 
 
