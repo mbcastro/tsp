@@ -5,4 +5,9 @@ project (TSP)
 add_subdirectory (utils)
 
 add_subdirectory (x86) 
+
+if (ARM)
+add_subdirectory (arm)
+endif (ARM)
+
 #add_subdirectory (mppa)
