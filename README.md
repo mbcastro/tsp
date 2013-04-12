@@ -1,4 +1,6 @@
 tsp
 ===
 
-Traveler Salesman Problem
+Travelling salesman problem
+
+Simple parallel implementation for the x86, ARM and MPPA architectures.
