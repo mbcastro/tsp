@@ -10,4 +10,6 @@ if (ARM)
 add_subdirectory (arm)
 endif (ARM)
 
-#add_subdirectory (mppa)
+if (MPPA)
+add_subdirectory (mppa)
+endif (MPPA)

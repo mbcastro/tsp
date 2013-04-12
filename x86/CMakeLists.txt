@@ -6,7 +6,9 @@ project(TSP)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/x86/bin)
 
 # source files
-file(GLOB source_files "${CMAKE_BINARY_DIR}/src/*")
+file(GLOB source_files "${CMAKE_BINARY_DIR}/src/*" "${CMAKE_BINARY_DIR}/x86/src/*")
+
+include_directories(${CMAKE_BINARY_DIR}/src)
 
 # linker
 link_libraries("-lm -lpthread")

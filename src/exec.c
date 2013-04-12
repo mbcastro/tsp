@@ -92,28 +92,19 @@ void do_work (int nb_workers) {
 
 }
 
-int main (int argc, char **argv) {
-	distance_matrix_t distance __attribute__ ((aligned (PAGE_SIZE)));
-	int n_workers, n_towns, seed;
-	job_queue_t q;
+int start_execution(int n_workers, int n_towns, int seed) {
+	distance_matrix_t *distance;
+	job_queue_t *q;
 	unsigned long start, end, end_generation, diff, diff_generation;
 
-	CHECK_PAGE_SIZE();
-	
-	if (argc != 4) {
-		fprintf (stderr, "Usage: %s <nb_threads > <ncities> <seed> \n",argv[0]);
-		exit (1);
-	}
+	distance = (distance_matrix_t *) malloc(sizeof(distance_matrix_t));
+	q = (job_queue_t *) malloc(sizeof(job_queue_t));
 
-	n_workers = atoi (argv[1]);
-	n_towns = atoi(argv[2]);
-	seed = atoi(argv[3]);
-
-	LOG ("nb_threads = %3d ncities = %3d\n", n_workers, n_towns);
+	LOG ("nb_threads = %3d ncities = %3d seed = %d\n", n_workers, n_towns, seed);
 
 	init_time();
-	init_distance (&distance, n_towns, seed);
-	init_tsp(&distance, &q, n_workers, n_towns);
+	init_distance (distance, n_towns, seed);
+	init_tsp(distance, q, n_workers, n_towns);
 	
 	start = get_time();
 	generate_jobs();
@@ -121,7 +112,9 @@ int main (int argc, char **argv) {
 	do_work(n_workers);
 	end = get_time();
 
-	free_queue(&q);
+	free_queue(q);
+	free(distance);
+	free(q);
 
 	diff = diff_time (start, end);
 	diff_generation = diff_time(start, end_generation);
