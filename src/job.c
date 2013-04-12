@@ -23,6 +23,8 @@ void add_job (job_queue_t *q, job_t j) {
 }
 
 int get_job (job_queue_t *q, job_t *j) {
+	int index;
+
 	if(q->begin == q->end)
 		return 0;
 
@@ -31,9 +33,11 @@ int get_job (job_queue_t *q, job_t *j) {
 		MUTEX_UNLOCK(q->mutex);
 		return 0;
 	}
-	memcpy(j, &q->buffer[q->begin++].tsp_job, sizeof(job_t));	
+	index = q->begin++;
 	MUTEX_UNLOCK(q->mutex);
-
+	
+	memcpy(j, &q->buffer[index].tsp_job, sizeof(job_t));	
+	
 	return 1;
 } 
 
