@@ -112,14 +112,16 @@ int main (int argc, char **argv) {
 	LOG ("nb_threads = %3d ncities = %3d\n", n_workers, n_towns);
 
 	init_time();
-	init_queue (&q);
 	init_distance (&distance, n_towns, seed);
 	init_tsp(&distance, &q, n_workers, n_towns);
+	
 	start = get_time();
-	generate_jobs ();
+	generate_jobs();
 	end_generation = get_time();
 	do_work(n_workers);
 	end = get_time();
+
+	free_queue(&q);
 
 	diff = diff_time (start, end);
 	diff_generation = diff_time(start, end_generation);

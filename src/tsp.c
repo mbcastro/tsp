@@ -14,6 +14,7 @@ static struct {
 
 void init_tsp(distance_matrix_t *distance_matrix, job_queue_t *q, int nb_workers, int n_towns) {
 	int total;
+	
 	minimun_distance.distance = INT_MAX;
 	MUTEX_INIT(minimun_distance.mutex);
 	distance = distance_matrix;
@@ -25,7 +26,10 @@ void init_tsp(distance_matrix_t *distance_matrix, job_queue_t *q, int nb_workers
 		total *= n_towns - max_hops;
 	}
 	max_hops++;
+
+	init_queue(q, total);
 	LOG("MAX_HOPS %d\n", max_hops);
+	LOG("NB_TASKS %d\n", total);
 }
 
 int present (int city, int hops, path_t *path) {
