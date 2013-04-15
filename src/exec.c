@@ -70,22 +70,18 @@ void do_work (int nb_workers) {
 	unsigned long i;
 	void *status;
 	pthread_t *tids;
-/*	
-	pthread_attr_t att;	
-	pthread_attr_init (&att);
-    pthread_attr_setstacksize (&att, 20000); 
-*/
-	tids = (pthread_t *) malloc (sizeof(pthread_t) * nb_workers);
 
-	for (i = 0; i < nb_workers - 1; i++) {
+	tids = (pthread_t *) malloc (sizeof(pthread_t) * (nb_workers - 1));
+	assert (tids != NULL);
+
+	for (i = 0; i < nb_workers - 1; i++)
 		pthread_create (&tids[i], NULL, worker, (void *)i);
-	}
 
 	worker ((void *)((long)nb_workers - 1));
 
-	for (i = 0; i < nb_workers - 1; i++) {
+	for (i = 0; i < nb_workers - 1; i++)
 		pthread_join (tids[i], &status);
-	}
+	free (tids);
 #else
 	worker ((void *)1);
 #endif
@@ -99,6 +95,7 @@ int start_execution(int n_workers, int n_towns, int seed) {
 
 	distance = (distance_matrix_t *) malloc(sizeof(distance_matrix_t));
 	q = (job_queue_t *) malloc(sizeof(job_queue_t));
+	assert(distance != NULL && q != NULL);
 
 	LOG ("nb_threads = %3d ncities = %3d seed = %d\n", n_workers, n_towns, seed);
 
@@ -121,5 +118,5 @@ int start_execution(int n_workers, int n_towns, int seed) {
 	tsp_log_shortest_path();
 	printf("time = %lu generation = %lu (Ratio %.4f)\n", diff, diff_generation, 100.0f * diff_generation / diff);
 	
-	return 0;
+	return tsp_get_shortest_path();
 }

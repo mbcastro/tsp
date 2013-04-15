@@ -14,9 +14,9 @@ set(MPPA_TOOLCHAIN_DIR "/usr/local/k1tools")
 set(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "")
 
 # source files
-file(GLOB source_files "${CMAKE_BINARY_DIR}/src/*" "${CMAKE_BINARY_DIR}/mppa/master/src/*")
+file(GLOB source_files "${CMAKE_BINARY_DIR}/src/*" "${CMAKE_BINARY_DIR}/mppa/src/*" "${CMAKE_BINARY_DIR}/mppa/master/src/*")
 
-include_directories(${CMAKE_BINARY_DIR}/src)
+include_directories("${CMAKE_BINARY_DIR}/src" "${CMAKE_BINARY_DIR}/mppa/src/")
 
 # linker
 link_libraries("-lm -lmppaipc")

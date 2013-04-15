@@ -28,6 +28,7 @@ void init_tsp(distance_matrix_t *distance_matrix, job_queue_t *q, int nb_workers
 	max_hops++;
 
 	init_queue(q, total);
+
 	LOG("MAX_HOPS %d\n", max_hops);
 	LOG("NB_TASKS %d\n", total);
 }
@@ -92,9 +93,11 @@ void distributor (int hops, int len, path_t *path) {
 }
 
 void generate_jobs () {
-	path_t path;
+	path_t path;	
+	LOG("Task generation starting...\n");
 	path [0] = 0;
 	distributor (1, 0, &path);
+	LOG("Task generation complete.\n");
 }
 
 void *worker (void *num_worker_par) {
@@ -113,5 +116,9 @@ void *worker (void *num_worker_par) {
 }
 
 void tsp_log_shortest_path (void) {
-	LOG ("Shortest path len = %d\n", minimun_distance.distance);
+	LOG ("Shortest path len = %d\n", tsp_get_shortest_path());
+}
+
+int tsp_get_shortest_path (void) {
+	return minimun_distance.distance;
 }

@@ -20,11 +20,13 @@ typedef struct {
 	char PADDING[DISTANCE_MAATRIX_T_PADDING];
 } distance_matrix_t;
 
+
 void init_tsp(distance_matrix_t *distance_matrix, job_queue_t *q, int nb_workers, int n_towns);
 void tsp (int hops, int len, path_t *path, unsigned long *cuts, int num_worker);
 void distributor (int hops, int len, path_t *path);
 void generate_jobs ();
 void *worker (void *num_worker);
+int tsp_get_shortest_path (void);
 void tsp_log_shortest_path (void);
 
 #endif

@@ -9,6 +9,8 @@ void init_queue (job_queue_t *q, unsigned long max_size) {
 	q->begin = 0;
 	q->end = 0;
 	q->buffer = (job_queue_node_t *) malloc(sizeof(job_queue_node_t) * max_size);
+	LOG("Trying to allocate %lu bytes for the queue\n", sizeof(job_queue_node_t) * max_size);
+	assert(q->buffer != NULL);
 	MUTEX_INIT(q->mutex);
 }
 

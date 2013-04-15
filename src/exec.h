@@ -3,6 +3,6 @@
 
 #include "defs.h"
 
-void start_execution(int n_workers, int n_towns, int seed);
+int start_execution(int n_workers, int n_towns, int seed);
 
 #endif //__EXEC_H
