@@ -25,7 +25,7 @@ link_libraries("-lm -lmppaipc")
 set (CMAKE_C_FLAGS "-Wall -O6 -mos=nodeos")
 
 #Gets the page size for the current architecture
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DPAGE_SIZE=4096")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DPAGE_SIZE=4096 -DNO_CACHE_COHERENCE")
 
 
 # add debug flag if needed (example: cmake -DDEBUG:STRING=1 .)

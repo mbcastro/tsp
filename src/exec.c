@@ -3,6 +3,7 @@
 #include <math.h>
 #include <limits.h>
 
+#include "exec.h"
 #include "timer.h"
 #include "defs.h"
 #include "tsp.h"
@@ -65,7 +66,10 @@ void print_distance_matrix (distance_matrix_t *distance) {
 	LOG ("done ...\n");
 }
 
-void do_work (int nb_workers) {
+
+
+ execution_info_t do_work (const int partition, const int n_partitions, const int nb_workers) {
+	execution_info_t ret;
 #ifdef MT
 	unsigned long i;
 	void *status;
@@ -76,6 +80,8 @@ void do_work (int nb_workers) {
 
 	for (i = 0; i < nb_workers - 1; i++)
 		pthread_create (&tids[i], NULL, worker, (void *)i);
+	
+	generate_jobs(partition, n_partitions);
 
 	worker ((void *)((long)nb_workers - 1));
 
@@ -83,15 +89,19 @@ void do_work (int nb_workers) {
 		pthread_join (tids[i], &status);
 	free (tids);
 #else
+	generate_jobs(partition, n_partitions);
+
 	worker ((void *)1);
 #endif
-
+	ret.partition = partition;
+	ret.shortest_path_length = tsp_get_shortest_path();
+	return ret;
 }
 
-int start_execution(int n_workers, int n_towns, int seed) {
+execution_info_t start_execution(int partition, int n_partitions, int n_workers, int n_towns, int seed) {
 	distance_matrix_t *distance;
 	job_queue_t *q;
-	unsigned long start, end, end_generation, diff, diff_generation;
+	execution_info_t ret;
 
 	distance = (distance_matrix_t *) malloc(sizeof(distance_matrix_t));
 	q = (job_queue_t *) malloc(sizeof(job_queue_t));
@@ -101,22 +111,18 @@ int start_execution(int n_workers, int n_towns, int seed) {
 
 	init_time();
 	init_distance (distance, n_towns, seed);
-	init_tsp(distance, q, n_workers, n_towns);
-	
-	start = get_time();
-	generate_jobs();
-	end_generation = get_time();
-	do_work(n_workers);
-	end = get_time();
+	init_tsp(distance, q, partition, n_partitions, n_workers, n_towns);
+
+	ret = do_work(partition, n_partitions, n_workers);
 
 	free_queue(q);
 	free(distance);
 	free(q);
 
-	diff = diff_time (start, end);
-	diff_generation = diff_time(start, end_generation);
-	tsp_log_shortest_path();
-	printf("time = %lu generation = %lu (Ratio %.4f)\n", diff, diff_generation, 100.0f * diff_generation / diff);
-	
-	return tsp_get_shortest_path();
+	return ret;
+}
+
+
+void print_execution_info(execution_info_t exec_info) {
+	printf("Partition: %d Shortest path length: %d\n", exec_info.partition, exec_info.shortest_path_length);
 }

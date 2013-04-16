@@ -1,6 +1,9 @@
 #include <stdio.h>
 #include <limits.h>
+#include <time.h>
+
 #include "tsp.h"
+
 
 static distance_matrix_t *distance;
 static job_queue_t *queue;
@@ -12,7 +15,7 @@ static struct {
 } minimun_distance;
 
 
-void init_tsp(distance_matrix_t *distance_matrix, job_queue_t *q, int nb_workers, int n_towns) {
+void init_tsp(distance_matrix_t *distance_matrix, job_queue_t *q, int partition, int n_partitions, int n_workers, int n_towns) {
 	int total;
 	
 	minimun_distance.distance = INT_MAX;
@@ -21,16 +24,20 @@ void init_tsp(distance_matrix_t *distance_matrix, job_queue_t *q, int nb_workers
 	queue = q;
 	max_hops = 0;
 	total = 1;
-	while (total < MIN_JOBS_THREAD * nb_workers && max_hops < n_towns) {
+	while (total < MIN_JOBS_THREAD * n_workers * n_partitions && max_hops < n_towns) {
 		max_hops++;
 		total *= n_towns - max_hops;
 	}
 	max_hops++;
 
-	init_queue(q, total);
+	if (partition == 0) {
+		LOG("MAX_HOPS %d\n", max_hops);
+		LOG("NB_TASKS %d\n", total);
+	}
+	
+	unsigned long queue_size = total / n_partitions + total % n_partitions;
+	init_queue(q, queue_size);
 
-	LOG("MAX_HOPS %d\n", max_hops);
-	LOG("NB_TASKS %d\n", total);
 }
 
 int present (int city, int hops, path_t *path) {
@@ -46,7 +53,7 @@ void tsp (int hops, int len, path_t *path, unsigned long *cuts, int num_worker) 
 		(*cuts)++;
 		return;
 	}
-	if (hops == distance->n_towns) {
+	if (hops == distance->n_towns) {		
 		MUTEX_LOCK(minimun_distance.mutex);
 		if (len < minimun_distance.distance) {
 			minimun_distance.distance = len;
@@ -70,14 +77,17 @@ void tsp (int hops, int len, path_t *path, unsigned long *cuts, int num_worker) 
 	}
 }
 
-void distributor (int hops, int len, path_t *path) {
+void distributor (int hops, int len, path_t *path, const int partition, const int n_partitions, int *job_index) {
 	job_t j;
 	int i;	
 	if (hops == max_hops) {
-		j.len = len;
-		for (i = 0; i < hops; i++)
-			j.path[i] = (*path)[i];
-		add_job (queue, j);
+		if ((*job_index) % n_partitions == partition) {
+			j.len = len;
+			for (i = 0; i < hops; i++)
+				j.path[i] = (*path)[i];
+			add_job (queue, j);
+		}
+		(*job_index)++;
 	} else {
 		int me, city, dist;
 		me = (*path)[hops - 1];
@@ -86,17 +96,19 @@ void distributor (int hops, int len, path_t *path) {
 			if (!present(city,hops, path)) {
 				(*path)[hops] = city;
 				dist = distance->info[me][i].dist;
-				distributor (hops + 1, len + dist, path);       
+				distributor (hops + 1, len + dist, path, partition, n_partitions, job_index);       
 			}
 		}
 	}
 }
 
-void generate_jobs () {
+void generate_jobs (const int partition, const int n_partitions) {
+	int job_count = 0;
 	path_t path;	
 	LOG("Task generation starting...\n");
 	path [0] = 0;
-	distributor (1, 0, &path);
+	distributor (1, 0, &path, partition, n_partitions, &job_count);
+	close_queue(queue);
 	LOG("Task generation complete.\n");
 }
 
@@ -105,11 +117,24 @@ void *worker (void *num_worker_par) {
 	int jobcount = 0;
 	job_t job;
 	unsigned long cuts = 0;
+	int finished = 0;
+	struct timespec wait_time;
+	wait_time.tv_sec = 0;
+	wait_time.tv_nsec = 1;
 
-	while (get_job (queue, &job)) {
-		jobcount++;
-		tsp (max_hops, job.len, &job.path, &cuts, num_worker);
-	}
+	while (!finished)
+		switch (get_job (queue, &job)) {
+			case QUEUE_OK:
+				jobcount++;
+				tsp (max_hops, job.len, &job.path, &cuts, num_worker);
+				break;
+			case QUEUE_CLOSED:
+				finished = 1;
+				break;
+			case QUEUE_RETRY:				
+				nanosleep(&wait_time, NULL);
+				break;
+		}
 
 	LOG ("Worker [%3lu] terminates, %4d jobs done with %16lu cuts.\n", num_worker, jobcount, cuts);
 	return (void *) 0;
