@@ -53,16 +53,21 @@ void tsp (int hops, int len, path_t *path, unsigned long *cuts, int num_worker) 
 		(*cuts)++;
 		return;
 	}
-	if (hops == distance->n_towns) {		
+	if (hops == distance->n_towns) {
+		int found = 0;
 		MUTEX_LOCK(minimun_distance.mutex);
 		if (len < minimun_distance.distance) {
 			minimun_distance.distance = len;
+			found = 1;
+		}
+		MUTEX_UNLOCK(minimun_distance.mutex);
+		if (found) {
+			new_minimun_distance_found(num_worker, len);
 			LOG ("worker[%d] finds path len = %3d :", num_worker, len);
 			for (i = 0; i < distance->n_towns; i++)
 				LOG ("%2d ", (*path)[i]);
 			LOG ("\n");
 		}
-		MUTEX_UNLOCK(minimun_distance.mutex);
 	} else {
 		int city, me, dist;
 		me = (*path)[hops - 1];

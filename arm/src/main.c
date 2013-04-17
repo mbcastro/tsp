@@ -18,3 +18,6 @@ int main (int argc, char **argv) {
 
 	return 0;
 }
+
+void new_minimun_distance_found (int num_worker, int length) {
+}
