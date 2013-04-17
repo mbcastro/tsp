@@ -13,6 +13,7 @@ void init_queue (job_queue_t *q, unsigned long max_size) {
 	LOG("Trying to allocate %lu bytes for the queue\n", sizeof(job_queue_node_t) * max_size);
 	assert(q->buffer != NULL);
 	MUTEX_INIT(q->mutex);
+	COND_VAR_INIT(q->cond);
 }
 
 void add_job (job_queue_t *q, job_t j) {
@@ -20,29 +21,30 @@ void add_job (job_queue_t *q, job_t j) {
 	q->buffer[q->end].tsp_job.len = j.len;
 	memcpy (&q->buffer[q->end].tsp_job.path, j.path, sizeof(path_t));
 	q->end++;
+	COND_VAR_BROADCAST(q->cond);
 	MUTEX_UNLOCK(q->mutex);
 }
 
 queue_status_t get_job (job_queue_t *q, job_t *j) {
 	int index;
 
- 	
 #ifndef NO_CACHE_COHERENCE
-	if(q->begin == q->end) {
-		return is_queue_closed(q) ? QUEUE_CLOSED : QUEUE_RETRY;	
-	}
+	if(q->begin == q->end && is_queue_closed(q))
+		return QUEUE_CLOSED;
 #endif
 
 	MUTEX_LOCK(q->mutex);
-	if(q->begin == q->end) {
-		MUTEX_UNLOCK(q->mutex);
-		return is_queue_closed(q) ? QUEUE_CLOSED : QUEUE_RETRY;
+	while (q->begin == q->end) {
+		if (is_queue_closed(q))	{
+			MUTEX_UNLOCK(q->mutex);
+			return QUEUE_CLOSED;
+		}
+		COND_VAR_WAIT(q->cond, q->mutex);
 	}
+
 	index = q->begin++;
-	MUTEX_UNLOCK(q->mutex);
-	
-	memcpy(j, &q->buffer[index].tsp_job, sizeof(job_t));	
-	
+	MUTEX_UNLOCK(q->mutex);		
+	memcpy(j, &q->buffer[index].tsp_job, sizeof(job_t));		
 	return QUEUE_OK;
 } 
 

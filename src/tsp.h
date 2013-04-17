@@ -27,5 +27,6 @@ void generate_jobs ();
 void *worker (void *num_worker);
 int tsp_get_shortest_path (void);
 void tsp_log_shortest_path (void);
+int tsp_update_minimum_distance(int new_distance);
 
 #endif

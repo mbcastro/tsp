@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <limits.h>
-#include <time.h>
 
 #include "tsp.h"
 
@@ -54,14 +53,7 @@ void tsp (int hops, int len, path_t *path, unsigned long *cuts, int num_worker) 
 		return;
 	}
 	if (hops == distance->n_towns) {
-		int found = 0;
-		MUTEX_LOCK(minimun_distance.mutex);
-		if (len < minimun_distance.distance) {
-			minimun_distance.distance = len;
-			found = 1;
-		}
-		MUTEX_UNLOCK(minimun_distance.mutex);
-		if (found) {
+		if (tsp_update_minimum_distance(len)) {
 			new_minimun_distance_found(num_worker, len);
 			LOG ("worker[%d] finds path len = %3d :", num_worker, len);
 			for (i = 0; i < distance->n_towns; i++)
@@ -123,9 +115,6 @@ void *worker (void *num_worker_par) {
 	job_t job;
 	unsigned long cuts = 0;
 	int finished = 0;
-	struct timespec wait_time;
-	wait_time.tv_sec = 0;
-	wait_time.tv_nsec = 1;
 
 	while (!finished)
 		switch (get_job (queue, &job)) {
@@ -135,9 +124,6 @@ void *worker (void *num_worker_par) {
 				break;
 			case QUEUE_CLOSED:
 				finished = 1;
-				break;
-			case QUEUE_RETRY:				
-				nanosleep(&wait_time, NULL);
 				break;
 		}
 
@@ -150,5 +136,24 @@ void tsp_log_shortest_path (void) {
 }
 
 int tsp_get_shortest_path (void) {
-	return minimun_distance.distance;
+	int ret;
+#ifndef NO_CACHE_COHERENCE
+	MUTEX_LOCK(minimun_distance.mutex);
+#endif
+	ret = minimun_distance.distance;
+#ifndef NO_CACHE_COHERENCE	
+	MUTEX_UNLOCK(minimun_distance.mutex);
+#endif	
+	return ret;
+}
+
+int tsp_update_minimum_distance (int new_distance) {
+	int min_updated = 0;
+	MUTEX_LOCK(minimun_distance.mutex);
+	if (new_distance < minimun_distance.distance) {
+		minimun_distance.distance = new_distance;
+		min_updated = 1;
+	}
+	MUTEX_UNLOCK(minimun_distance.mutex);
+	return min_updated;
 }

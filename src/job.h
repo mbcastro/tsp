@@ -22,6 +22,7 @@ typedef struct {
 	int closed;
 	job_queue_node_t *buffer;
 	MUTEX_CREATE(mutex);
+	COND_VAR_CREATE(cond);
 } job_queue_t;
 
 void init_queue (job_queue_t *q, unsigned long max_size);
@@ -31,8 +32,7 @@ void add_job (job_queue_t *q, job_t j);
 
 typedef enum {
 	QUEUE_CLOSED = 0,
-	QUEUE_RETRY = 1,
-	QUEUE_OK = 2
+	QUEUE_OK = 1
 } queue_status_t;
 
 queue_status_t get_job (job_queue_t *q, job_t *j);

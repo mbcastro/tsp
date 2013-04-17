@@ -73,14 +73,17 @@ void print_distance_matrix (distance_matrix_t *distance) {
 #ifdef MT
 	unsigned long i;
 	void *status;
-	pthread_t *tids;
+	pthread_t *tids = NULL;
 
-	tids = (pthread_t *) malloc (sizeof(pthread_t) * (nb_workers - 1));
-	assert (tids != NULL);
-
+	if(nb_workers > 1) {
+		tids = (pthread_t *) malloc (sizeof(pthread_t) * (nb_workers - 1));
+		assert (tids != NULL);
+	}
+	
 	for (i = 0; i < nb_workers - 1; i++)
 		pthread_create (&tids[i], NULL, worker, (void *)i);
-	
+
+
 	generate_jobs(partition, n_partitions);
 
 	worker ((void *)((long)nb_workers - 1));
@@ -125,4 +128,8 @@ execution_info_t start_execution(int partition, int n_partitions, int n_workers,
 
 void print_execution_info(execution_info_t exec_info) {
 	printf("Partition: %d Shortest path length: %d\n", exec_info.partition, exec_info.shortest_path_length);
+}
+
+void update_minimum(int new_minimum) {
+	tsp_update_minimum_distance (new_minimum);
 }

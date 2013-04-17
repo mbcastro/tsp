@@ -22,12 +22,24 @@
 #define MUTEX_LOCK(m) 	while(__sync_lock_test_and_set(&m, 1))
 #define MUTEX_UNLOCK(m) __sync_lock_release(&m)	
 
+#define COND_VAR_CREATE(cv) 
+#define COND_VAR_INIT(cv) 
+#define COND_VAR_SIGNAL(cv) 
+#define COND_VAR_BROADCAST(cv) 
+#define COND_VAR_WAIT(cv, m) 
+
 #else
 
 #define MUTEX_CREATE(m)	pthread_mutex_t m
 #define MUTEX_INIT(m) 	pthread_mutex_init(&m, NULL)
 #define MUTEX_LOCK(m) 	pthread_mutex_lock(&m)
 #define MUTEX_UNLOCK(m) pthread_mutex_unlock(&m)
+
+#define COND_VAR_CREATE(cv) pthread_cond_t cv
+#define COND_VAR_INIT(cv) pthread_cond_init (&cv, NULL)
+#define COND_VAR_SIGNAL(cv) pthread_cond_signal(&cv)
+#define COND_VAR_BROADCAST(cv) pthread_cond_broadcast(&cv)
+#define COND_VAR_WAIT(cv, m) pthread_cond_wait (&cv, &m)
 
 #endif //CAS
 
@@ -37,6 +49,13 @@
 #define MUTEX_INIT(m)	/* none */
 #define MUTEX_LOCK(m)	/* none */
 #define MUTEX_UNLOCK(m)	/* none */
+
+
+#define COND_VAR_CREATE(cv) 
+#define COND_VAR_INIT(cv) 
+#define COND_VAR_SIGNAL(cv) 
+#define COND_VAR_BROADCAST(cv) 
+#define COND_VAR_WAIT(cv, m) 
 
 #endif //MT
 
