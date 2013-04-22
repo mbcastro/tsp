@@ -44,7 +44,5 @@ int tsp_update_minimum_distance(tsp_t *tsp, int new_distance);
 
 //callback
 extern void new_minimun_distance_found(tsp_t *tsp, int num_worker, int length);
-//minimum hint
-void update_minimum(tsp_t *tsp, int new_minimum);
 
 #endif

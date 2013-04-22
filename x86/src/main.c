@@ -4,6 +4,7 @@
 #include "exec.h"
 
 struct execution_parameters {
+	tsp_t **tsp;
 	int partition;
 	int nb_partitions;
 	int nb_threads;
@@ -13,19 +14,21 @@ struct execution_parameters {
 
 void *spawn_worker(void* params) {
 	struct execution_parameters *p = (struct execution_parameters *)params;
-	start_execution(p->partition, p->nb_partitions, p->nb_threads, p->nb_cities, p->seed);
+	start_execution(p->tsp, p->partition, p->nb_partitions, p->nb_threads, p->nb_cities, p->seed);
 	free(params);
 	return NULL;
 }
 
-pthread_t *spawn (int partition, int nb_partitions, int nb_threads, int nb_cities, int seed) {
+pthread_t *spawn (tsp_t **tsp, int partition, int nb_partitions, int nb_threads, int nb_cities, int seed) {
 	pthread_t *tid = (pthread_t *)malloc (sizeof(pthread_t));
 	struct execution_parameters *params = (struct execution_parameters*) malloc (sizeof(struct execution_parameters));
+	params->tsp = tsp;
 	params->partition = partition;
 	params->nb_partitions = nb_partitions;
 	params->nb_threads = nb_threads;
 	params->nb_cities = nb_cities;
 	params->seed = seed;
+
 	pthread_create (tid, NULL, spawn_worker, params);
 	return tid;	
 }
@@ -45,18 +48,22 @@ int main (int argc, char **argv) {
 	int seed = atoi(argv[3]);
 	int nb_partitions = atoi(argv[4]);
 	
+	tsp_t **tsps = (tsp_t **)(malloc(sizeof(tsp_t **) * nb_partitions));
 	pthread_t **tids = (pthread_t **) malloc (sizeof(pthread_t *) * nb_partitions);
 	assert (tids != NULL);	
 	for (i = 0; i < nb_partitions; i++)
-		tids[i] = spawn(i, nb_partitions, nb_threads, nb_cities, seed);
+		tids[i] = spawn(&tsps[i], i, nb_partitions, nb_threads, nb_cities, seed);
 	for (i = 0; i < nb_partitions; i++) {
 		pthread_join (*(tids[i]), NULL);
 		free(tids[i]);
 	}
+
 	free (tids);
+	free(tsps);
 
 	return 0;
 }
 
-void new_minimun_distance_found (int num_worker, int length) {
+void new_minimun_distance_found(tsp_t *tsp, int num_worker, int length) {
 }
+

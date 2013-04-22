@@ -67,14 +67,13 @@ void print_distance_matrix (distance_matrix_t *distance) {
 	return ret;
 }
 
-execution_info_t start_execution(int partition, int n_partitions, int n_workers, int n_towns, int seed) {
-	tsp_t *tsp;
+execution_info_t start_execution(tsp_t **tsp, int partition, int n_partitions, int n_workers, int n_towns, int seed) {
 	execution_info_t ret;
 	LOG ("nb_threads = %3d ncities = %3d seed = %d\n", n_workers, n_towns, seed);
 	init_time();	
-	tsp = init_tsp(partition, n_partitions, n_workers, n_towns, seed);
-	ret = do_work(tsp, partition, n_partitions, n_workers);
-	free_tsp(tsp);
+	(*tsp) = init_tsp(partition, n_partitions, n_workers, n_towns, seed);
+	ret = do_work((*tsp), partition, n_partitions, n_workers);
+	free_tsp(*tsp);
 	return ret;
 }
 
