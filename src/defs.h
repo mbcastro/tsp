@@ -76,6 +76,4 @@ inline unsigned int simple_rng_next();
 #define RAND_NEXT() simple_rng_next()
 #endif //DEF_RAND
 
-extern void new_minimun_distance_found(int num_worker, int length);
-
 #endif //__DEFS_H

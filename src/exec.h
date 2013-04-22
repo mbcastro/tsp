@@ -10,7 +10,8 @@ typedef struct  {
 
 
 execution_info_t start_execution(int partition, int n_partitions, int n_workers, int n_towns, int seed);
-void update_minimum(int new_minimum);
 void print_execution_info(execution_info_t exec_info);
+
+
 
 #endif //__EXEC_H

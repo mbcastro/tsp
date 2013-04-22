@@ -3,8 +3,6 @@
 
 #include "exec.h"
 
-
-
 struct execution_parameters {
 	int partition;
 	int nb_partitions;
@@ -28,7 +26,7 @@ pthread_t *spawn (int partition, int nb_partitions, int nb_threads, int nb_citie
 	params->nb_threads = nb_threads;
 	params->nb_cities = nb_cities;
 	params->seed = seed;
-	pthread_create (tid, NULL, spawn_worker, (void *)&params);
+	pthread_create (tid, NULL, spawn_worker, params);
 	return tid;	
 }
 

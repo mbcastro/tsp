@@ -66,5 +66,5 @@ void callback_slave (mppa_sigval_t sigval) {
 		if (comm_buffer[i] < min) 
 			min = comm_buffer[i];
 	update_minimum(min);
-	printf("Slave: Recebi um callback. %d\n", min);
+	LOG("Slave: Received a callback. %d\n", min);
 }

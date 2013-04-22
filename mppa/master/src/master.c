@@ -54,7 +54,7 @@ int main (int argc, const char **argv) {
 		min = (comm_buffer[i] < min) ? comm_buffer[i] : min;
 
     printf ("Execution time: %lu\n", diff_time(start, get_time()));
-	printf("Shortest path length: %d\n", min);
+	LOG("Shortest path length: %d\n", min);
 
 	close_barrier(sync_barrier);
 	close_broadcast(broad);
@@ -70,9 +70,9 @@ void new_minimun_distance_found (int num_worker, int lenght) {
 
 void callback_master (mppa_sigval_t sigval) {	
 	int i;
-	printf("Recebi um callback. Min vec: ");
+	LOG("Received a callback. Min vector: ");
 	for(i = 0; i < clusters; i++)
 		if(comm_buffer[i] != INT_MAX)
-			printf("%d, ", comm_buffer[i]);
-	printf("\n");
+			LOG("%d, ", comm_buffer[i]);
+	LOG("\n");
 }
