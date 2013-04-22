@@ -139,7 +139,7 @@ void tsp_log_shortest_path (void) {
 }
 
 inline int tsp_get_shortest_path (void) {
-#ifndef NO_CACHE_COHERENCE
+#ifdef NO_CACHE_COHERENCE
 	__builtin_k1_dflush();
 #endif
 	return minimun_distance.distance;

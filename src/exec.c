@@ -72,7 +72,6 @@ void print_distance_matrix (distance_matrix_t *distance) {
 	execution_info_t ret;
 #ifdef MT
 	unsigned long i;
-	void *status;
 	pthread_t *tids = NULL;
 
 	if(nb_workers > 1) {
@@ -88,7 +87,7 @@ void print_distance_matrix (distance_matrix_t *distance) {
 	worker ((void *)((long)nb_workers - 1));
 
 	for (i = 0; i < nb_workers - 1; i++)
-		pthread_join (tids[i], &status);
+		pthread_join (tids[i], NULL);
 	free (tids);
 #else
 	generate_jobs(partition, n_partitions);
