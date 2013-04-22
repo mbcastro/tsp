@@ -21,7 +21,7 @@ void add_job (job_queue_t *q, job_t j) {
 	q->buffer[q->end].tsp_job.len = j.len;
 	memcpy (&q->buffer[q->end].tsp_job.path, j.path, sizeof(path_t));
 	q->end++;
-	COND_VAR_BROADCAST(q->cond);
+	COND_VAR_SIGNAL(q->cond);
 	MUTEX_UNLOCK(q->mutex);
 }
 
@@ -32,7 +32,6 @@ queue_status_t get_job (job_queue_t *q, job_t *j) {
 	if(q->begin == q->end && is_queue_closed(q))
 		return QUEUE_CLOSED;
 #endif
-
 	MUTEX_LOCK(q->mutex);
 	while (q->begin == q->end) {
 		if (is_queue_closed(q))	{
@@ -43,7 +42,7 @@ queue_status_t get_job (job_queue_t *q, job_t *j) {
 	}
 
 	index = q->begin++;
-	MUTEX_UNLOCK(q->mutex);		
+	MUTEX_UNLOCK(q->mutex);
 	memcpy(j, &q->buffer[index].tsp_job, sizeof(job_t));		
 	return QUEUE_OK;
 } 

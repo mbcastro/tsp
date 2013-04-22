@@ -9,37 +9,62 @@
 #include "exec.h"
 #include "timer.h"
 
-static portal_t * min_slave_to_master_portal;
-static int n_threads, rank, clusters;
-static int min_from_master;
+static int clusters;
+static MUTEX_CREATE(min_slave_to_master_lock);
 
-void callback_master_to_slave (mppa_sigval_t sigval) {	
-	update_minimum(min_from_master);
-	printf("Slave: Recebi um callback. %d\n", min_from_master);
-}
+void callback_slave (mppa_sigval_t sigval);
+
+static int *comm_buffer;
+static int comm_buffer_size;
+static broadcast_t *broad;
+
+static int min_local = INT_MAX;
+
 
 int main(int argc, char **argv) {	
-	n_threads = atoi(argv[0]);
+	int i, n_threads = atoi(argv[0]);
 	clusters = atoi(argv[3]);
-	rank = __k1_get_cluster_id();
+	int rank = __k1_get_cluster_id();
 	LOG("Cluster %d/%d starting.\n", rank, clusters);
 
-	min_slave_to_master_portal = create_write_portal (MINIMUM_SLAVE_TO_MASTER, -1, -1);
-	portal_t *min_master_to_slave_portal = create_read_portal (MINIMUM_MASTER_TO_SLAVES, &min_from_master, sizeof(int), 0, callback_master_to_slave);
+	MUTEX_INIT(min_slave_to_master_lock);
+	
+	comm_buffer_size = (clusters + 1) * sizeof(int);
+	comm_buffer = (int *) malloc(comm_buffer_size);
+	for (i = 0; i <= clusters; i++)
+		comm_buffer[i] = INT_MAX;
 
-	start_execution(rank, clusters, n_threads, atoi(argv[1]), atoi(argv[2]));
-	    
-    close_portal(min_slave_to_master_portal);	
-    close_portal(min_master_to_slave_portal);
+	barrier_t *sync_barrier = create_slave_barrier (BARRIER_SYNC_MASTER, BARRIER_SYNC_SLAVE);
+	broad = create_broadcast (clusters, BROADCAST_MASK, comm_buffer, comm_buffer_size, TRUE, callback_slave);
 
-    LOG("Cluster %d saindo\n", rank);
+	barrier_wait(sync_barrier);
+
+	start_execution(rank, clusters, n_threads, atoi(argv[1]), atoi(argv[2]));    
+    LOG("Cluster %d exiting. Min: %d\n", rank, min_local);
+    
+    barrier_wait(sync_barrier);
+
+	close_broadcast(broad);
+	close_barrier(sync_barrier);
+	free(comm_buffer);
 
 	mppa_exit(0);
 	return 0;
 }
 
+
 void new_minimun_distance_found(int num_worker, int length) {
-	printf("Vai dar pwrite %d\n", num_worker);
-	int status = mppa_pwrite(min_slave_to_master_portal->file_descriptor, &length, sizeof(int), n_threads * sizeof(int) * rank + num_worker * sizeof(int));
-   	assert(status == sizeof(int));
+	MUTEX_LOCK(min_slave_to_master_lock);
+	broadcast (broad, &length, sizeof(int));
+	min_local = length;
+	MUTEX_UNLOCK(min_slave_to_master_lock);
+}
+
+void callback_slave (mppa_sigval_t sigval) {	
+	int i, min = INT_MAX;
+	for (i = 0; i < clusters; i++)
+		if (comm_buffer[i] < min) 
+			min = comm_buffer[i];
+	update_minimum(min);
+	printf("Slave: Recebi um callback. %d\n", min);
 }

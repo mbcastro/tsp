@@ -3,6 +3,7 @@
 
 #include <unistd.h>
 #include <assert.h>
+#include <pthread.h>
 
 #define MAX_TOWNS		20
 #define MIN_JOBS_THREAD 100
@@ -13,7 +14,6 @@
 
 #ifdef MT 
 
-#include <pthread.h>
 
 #ifdef CAS
 

@@ -23,7 +23,7 @@ void init_tsp(distance_matrix_t *distance_matrix, job_queue_t *q, int partition,
 	queue = q;
 	max_hops = 0;
 	total = 1;
-	while (total < MIN_JOBS_THREAD * n_workers * n_partitions && max_hops < n_towns) {
+	while (total < MIN_JOBS_THREAD * n_workers * n_partitions && max_hops < n_towns - 1) {
 		max_hops++;
 		total *= n_towns - max_hops;
 	}
@@ -48,7 +48,7 @@ int present (int city, int hops, path_t *path) {
 
 void tsp (int hops, int len, path_t *path, unsigned long *cuts, int num_worker) {
 	int i;
-	if (len >= minimun_distance.distance) {
+	if (len >= tsp_get_shortest_path()) {
 		(*cuts)++;
 		return;
 	}
@@ -81,7 +81,7 @@ void distributor (int hops, int len, path_t *path, const int partition, const in
 		if ((*job_index) % n_partitions == partition) {
 			j.len = len;
 			for (i = 0; i < hops; i++)
-				j.path[i] = (*path)[i];
+				j.path[i] = (*path)[i];			
 			add_job (queue, j);
 		}
 		(*job_index)++;
@@ -100,16 +100,19 @@ void distributor (int hops, int len, path_t *path, const int partition, const in
 }
 
 void generate_jobs (const int partition, const int n_partitions) {
-	int job_count = 0;
+	int i, job_count = 0;
 	path_t path;	
 	LOG("Task generation starting...\n");
 	path [0] = 0;
 	distributor (1, 0, &path, partition, n_partitions, &job_count);
 	close_queue(queue);
 	LOG("Task generation complete.\n");
+	for (i = 0; i < n_partitions; i++)
+		COND_VAR_SIGNAL(queue->cond);
 }
 
 void *worker (void *num_worker_par) {
+
 	long num_worker = (long)num_worker_par;
 	int jobcount = 0;
 	job_t job;
@@ -135,16 +138,11 @@ void tsp_log_shortest_path (void) {
 	LOG ("Shortest path len = %d\n", tsp_get_shortest_path());
 }
 
-int tsp_get_shortest_path (void) {
-	int ret;
+inline int tsp_get_shortest_path (void) {
 #ifndef NO_CACHE_COHERENCE
-	MUTEX_LOCK(minimun_distance.mutex);
+	__builtin_k1_dflush();
 #endif
-	ret = minimun_distance.distance;
-#ifndef NO_CACHE_COHERENCE	
-	MUTEX_UNLOCK(minimun_distance.mutex);
-#endif	
-	return ret;
+	return minimun_distance.distance;
 }
 
 int tsp_update_minimum_distance (int new_distance) {
