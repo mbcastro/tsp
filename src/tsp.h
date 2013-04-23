@@ -25,24 +25,29 @@ typedef struct {
 	job_queue_t queue;
 	int max_hops;
 	int min_distance;
+	int partition;
+	int nb_partitions;
+	int nb_workers;
 	MUTEX_CREATE(mutex);
 } tsp_t;
+
+typedef tsp_t * tsp_t_pointer;
 
 typedef struct {
 	tsp_t *tsp;
 	int num_worker;
 } tsp_worker_par_t;
 
-tsp_t *init_tsp(int partition, int n_partitions, int n_workers, int n_towns, int seed);
-void free_tsp(tsp_t *tsp);
-void tsp (tsp_t *tsp, int hops, int len, path_t *path, unsigned long *cuts, int num_worker);
-void generate_jobs (tsp_t *tsp, const int partition, const int n_partitions);
+tsp_t_pointer init_tsp(int partition, int n_partitions, int n_workers, int n_towns, int seed);
+void free_tsp(tsp_t_pointer tsp);
+void tsp (tsp_t_pointer tsp, int hops, int len, path_t *path, unsigned long *cuts, int num_worker);
+void generate_jobs (tsp_t_pointer tsp);
 void *worker (void *tsp_worker_par);
-int tsp_get_shortest_path (tsp_t *tsp);
-void tsp_log_shortest_path (tsp_t *tsp);
-int tsp_update_minimum_distance(tsp_t *tsp, int new_distance);
+int tsp_get_shortest_path (tsp_t_pointer tsp);
+void tsp_log_shortest_path (tsp_t_pointer tsp);
+int tsp_update_minimum_distance(tsp_t_pointer tsp, int length);
 
 //callback
-extern void new_minimun_distance_found(tsp_t *tsp, int num_worker, int length);
+extern void new_minimun_distance_found(tsp_t_pointer tsp);
 
 #endif

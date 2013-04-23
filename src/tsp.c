@@ -3,7 +3,6 @@
 #include <limits.h>
 #include <math.h>
 
-
 #include "tsp.h"
 
 void init_distance (tsp_t *tsp, int seed) {
@@ -43,26 +42,27 @@ void init_distance (tsp_t *tsp, int seed) {
 }
 
 
-tsp_t *init_tsp(int partition, int n_partitions, int n_workers, int n_towns, int seed) {
+tsp_t_pointer init_tsp(int partition, int nb_partitions, int nb_workers, int nb_towns, int seed) {
 	int total;
 	
-	tsp_t *tsp = (tsp_t *) malloc (sizeof (tsp_t));
+	tsp_t_pointer tsp = (tsp_t_pointer) malloc (sizeof (tsp_t));
 	assert(tsp != NULL);
 	tsp->distance = (distance_matrix_t *) malloc (sizeof (distance_matrix_t));
 	assert(tsp->distance != NULL);
 
-	tsp->min_distance = INT_MAX;
 	MUTEX_INIT(tsp->mutex);
-	
-	tsp->distance->n_towns = n_towns;
-
+	tsp->partition = partition;
+	tsp->nb_partitions = nb_partitions;
+	tsp->nb_workers = nb_workers;
+	tsp->min_distance = INT_MAX;
+	tsp->distance->n_towns = nb_towns;
 	init_distance(tsp, seed);
 
 	tsp->max_hops = 0;
 	total = 1;
-	while (total < MIN_JOBS_THREAD * n_workers * n_partitions && tsp->max_hops < n_towns - 1) {
+	while (total < MIN_JOBS_THREAD * nb_workers * nb_partitions && tsp->max_hops < nb_towns - 1) {
 		tsp->max_hops++;
-		total *= n_towns - tsp->max_hops;
+		total *= nb_towns - tsp->max_hops;
 	}
 	tsp->max_hops++;
 
@@ -71,13 +71,13 @@ tsp_t *init_tsp(int partition, int n_partitions, int n_workers, int n_towns, int
 		LOG("NB_TASKS %d\n", total);
 	}
 	
-	unsigned long queue_size = total / n_partitions + total % n_partitions;
+	unsigned long queue_size = total / nb_partitions + total % nb_partitions;
 	init_queue(&tsp->queue, queue_size);
 
 	return tsp;
 }
 
-void free_tsp(tsp_t *tsp) {
+void free_tsp(tsp_t_pointer tsp) {
 	free_queue(&tsp->queue);
 	free(tsp->distance);
 	free(tsp);
@@ -90,7 +90,7 @@ int present (int city, int hops, path_t *path) {
 	return 0;
 }
 
-void tsp (tsp_t *tsp_par, int hops, int len, path_t *path, unsigned long *cuts, int num_worker) {
+void tsp (tsp_t_pointer tsp_par, int hops, int len, path_t *path, unsigned long *cuts, int num_worker) {
 	int i;
 	if (len >= tsp_get_shortest_path(tsp_par)) {
 		(*cuts)++;
@@ -98,7 +98,7 @@ void tsp (tsp_t *tsp_par, int hops, int len, path_t *path, unsigned long *cuts, 
 	}
 	if (hops == tsp_par->distance->n_towns) {
 		if (tsp_update_minimum_distance(tsp_par, len)) {
-			new_minimun_distance_found(tsp_par, num_worker, len);
+			new_minimun_distance_found(tsp_par);
 			LOG ("worker[%d] finds path len = %3d :", num_worker, len);
 			for (i = 0; i < tsp_par->distance->n_towns; i++)
 				LOG ("%2d ", (*path)[i]);
@@ -118,11 +118,11 @@ void tsp (tsp_t *tsp_par, int hops, int len, path_t *path, unsigned long *cuts, 
 	}
 }
 
-void distributor (tsp_t *tsp_par, int hops, int len, path_t *path, const int partition, const int n_partitions, int *job_index) {
+void distributor (tsp_t_pointer tsp_par, int hops, int len, path_t *path, int *job_index) {
 	job_t j;
 	int i;	
 	if (hops == tsp_par->max_hops) {
-		if ((*job_index) % n_partitions == partition) {
+		if ((*job_index) % tsp_par->nb_partitions == tsp_par->partition) {
 			j.len = len;
 			for (i = 0; i < hops; i++)
 				j.path[i] = (*path)[i];			
@@ -137,22 +137,22 @@ void distributor (tsp_t *tsp_par, int hops, int len, path_t *path, const int par
 			if (!present(city, hops, path)) {
 				(*path)[hops] = city;
 				dist = tsp_par->distance->info[me][i].dist;
-				distributor (tsp_par, hops + 1, len + dist, path, partition, n_partitions, job_index);       
+				distributor (tsp_par, hops + 1, len + dist, path, job_index);       
 			}
 		}
 	}
 }
 
-void generate_jobs (tsp_t *tsp_par, const int partition, const int n_partitions) {
+void generate_jobs (tsp_t_pointer tsp) {
 	int i, job_count = 0;
 	path_t path;	
 	LOG("Task generation starting...\n");
 	path [0] = 0;
-	distributor (tsp_par, 1, 0, &path, partition, n_partitions, &job_count);
-	close_queue(&tsp_par->queue);
+	distributor (tsp, 1, 0, &path, &job_count);
+	close_queue(&tsp->queue);
 	LOG("Task generation complete.\n");
-	for (i = 0; i < n_partitions; i++)
-		COND_VAR_SIGNAL(tsp_par->queue.cond);
+	for (i = 0; i < tsp->nb_partitions; i++)
+		COND_VAR_SIGNAL(tsp->queue.cond_var);
 }
 
 void *worker (void *pars) {
@@ -190,7 +190,7 @@ inline int tsp_get_shortest_path (tsp_t *tsp) {
 	return tsp->min_distance;
 }
 
-int tsp_update_minimum_distance (tsp_t *tsp, int new_distance) {
+int tsp_update_minimum_distance (tsp_t_pointer tsp, int new_distance) {
 	int min_updated = 0;
 	MUTEX_LOCK(tsp->mutex);
 	if (new_distance < tsp->min_distance) {

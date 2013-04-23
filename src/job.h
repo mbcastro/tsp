@@ -21,8 +21,7 @@ typedef struct {
 	int end;
 	int closed;
 	job_queue_node_t *buffer;
-	MUTEX_CREATE(mutex);
-	COND_VAR_CREATE(cond);
+	COND_VAR_CREATE(cond_var);
 } job_queue_t;
 
 void init_queue (job_queue_t *q, unsigned long max_size);
