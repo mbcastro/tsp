@@ -26,8 +26,7 @@ void print_distance_matrix (distance_matrix_t *distance) {
 
 
 
- execution_info_t do_work (tsp_t *tsp) {
-	execution_info_t ret;
+ void do_work (tsp_t *tsp) {
 #ifdef MT
 	unsigned long i;
 	pthread_t *tids = NULL;
@@ -64,10 +63,6 @@ void print_distance_matrix (distance_matrix_t *distance) {
 	par->num_worker = 1;
 	worker (par);
 #endif
-
-	ret.partition = tsp->partition;
-	ret.shortest_path_length = tsp_get_shortest_path(tsp);
-	return ret;
 }
 
 tsp_t_pointer init_execution(int partition, int n_partitions, int n_workers, int n_towns, int seed) {
@@ -83,8 +78,4 @@ void start_execution(tsp_t_pointer tsp) {
 
 void end_execution (tsp_t_pointer tsp) {
 	free_tsp(tsp);
-}
-
-void print_execution_info(execution_info_t exec_info) {
-	printf("Partition: %d Shortest path length: %d\n", exec_info.partition, exec_info.shortest_path_length);
 }

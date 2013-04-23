@@ -1,8 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <limits.h>
 
 #include "exec.h"
+#include "timer.h"
 
 static tsp_t_pointer tsp_instance;
 
