@@ -43,7 +43,7 @@ void free_tsp(tsp_t_pointer tsp);
 void tsp (tsp_t_pointer tsp, int hops, int len, path_t *path, unsigned long *cuts, int num_worker);
 void generate_jobs (tsp_t_pointer tsp);
 void *worker (void *tsp_worker_par);
-int tsp_get_shortest_path (tsp_t_pointer tsp);
+inline int tsp_get_shortest_path (tsp_t_pointer tsp);
 void tsp_log_shortest_path (tsp_t_pointer tsp);
 int tsp_update_minimum_distance(tsp_t_pointer tsp, int length);
 

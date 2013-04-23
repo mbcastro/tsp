@@ -37,6 +37,6 @@ typedef enum {
 queue_status_t get_job (job_queue_t *q, job_t *j);
 
 void close_queue (job_queue_t *q);
-int is_queue_closed (job_queue_t *q);
+inline int is_queue_closed (job_queue_t *q);
 
 #endif
