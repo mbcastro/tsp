@@ -1,15 +1,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <limits.h>
+
 #include "exec.h"
+#include "timer.h"
 
 static tsp_t_pointer *tsps;
 
 static int min_distance = INT_MAX;
-static MUTEX_CREATE(min_lock);
+MUTEX_CREATE(min_lock, static);
 
 //Initialization synchronization
-static COND_VAR_CREATE(sync_barrier);
+COND_VAR_CREATE(sync_barrier, static);
 static int running_count = 0;
 
 
@@ -67,7 +69,9 @@ int main (int argc, char **argv) {
 		fprintf (stderr, "Usage: %s <nb_threads> <nb_towns> <seed> <nb_partitions>\n", argv[0]);
 		return 1;
 	}
-	
+
+	unsigned long start = get_time();	
+
 	COND_VAR_INIT(sync_barrier);
 	MUTEX_INIT(min_lock);
 	int nb_threads = atoi(argv[1]);
@@ -89,7 +93,10 @@ int main (int argc, char **argv) {
 		free(tids[i]);
 	}
 
-	LOG("Minimum distance: %d\n", min_distance);
+
+    unsigned long exec_time = diff_time(start, get_time());
+	printf ("%lu\t%d\t%d\t%d\t%d\t%d\n", 
+		exec_time, min_distance,nb_threads, nb_towns, seed, nb_partitions);
 
 	free (tids);
 	free(tsps);

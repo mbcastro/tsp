@@ -12,11 +12,11 @@ void init_distance (tsp_t *tsp, int seed) {
 	int i, j, k, city = 0;
 	int dx, dy, tmp;
 
-	RAND_INIT(seed);
+	RAND_STATE_T rand_state = RAND_INIT(seed);	
 
 	for (i = 0; i < n; i++) {
-		x[i] = RAND_NEXT() % MAX_GRID_X;
-		y[i] = RAND_NEXT() % MAX_GRID_Y;
+		x[i] = RAND_NEXT(rand_state) % MAX_GRID_X;
+		y[i] = RAND_NEXT(rand_state) % MAX_GRID_Y;
 	}
 
 	for (i = 0; i < n; i++) {

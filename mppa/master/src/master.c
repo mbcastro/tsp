@@ -15,13 +15,16 @@ static broadcast_t *broad;
 void callback_master (mppa_sigval_t sigval);
 
 int main (int argc, const char **argv) {
-	int rank, threads, status = 0, i;
+	int rank, nb_threads, nb_towns, seed, status = 0, i;
 	int pid;
 
-	threads = atoi(argv[1]);
+	nb_threads = atoi(argv[1]);
+	nb_towns = atoi(argv[2]);
+	seed = atoi(argv[3]);
 	clusters = atoi(argv[4]);
-	printf("Starting execution. Towns = %s, Seed = %s -- Clusters = %d, Threads/Cluster %d\n", 
-		argv[2], argv[3], clusters, threads);
+
+	LOG("Starting execution. Towns = %d, Seed = %d -- Clusters = %d, Threads/Cluster %d\n", 
+		nb_towns, seed, clusters, nb_threads);
 
 	int comm_buffer_size = (clusters + 1) * sizeof (int);
 	comm_buffer = (int *) malloc(comm_buffer_size);
@@ -53,8 +56,8 @@ int main (int argc, const char **argv) {
 	for (i = 0; i < clusters; i++)
 		min = (comm_buffer[i] < min) ? comm_buffer[i] : min;
 
-    printf ("Execution time: %lu\n", diff_time(start, get_time()));
-	LOG("Shortest path length: %d\n", min);
+    unsigned long exec_time = diff_time(start, get_time());
+	printf ("%lu\t%d\t%d\t%d\t%d\t%d\n", exec_time, min, nb_threads, nb_towns, seed, clusters);
 
 	close_barrier(sync_barrier);
 	close_broadcast(broad);

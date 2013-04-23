@@ -10,7 +10,7 @@
 #include "timer.h"
 
 static int clusters;
-static MUTEX_CREATE(min_slave_to_master_lock);
+MUTEX_CREATE(min_slave_to_master_lock, static);
 
 void callback_slave (mppa_sigval_t sigval);
 
