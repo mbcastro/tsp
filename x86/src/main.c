@@ -1,7 +1,12 @@
+#define _GNU_SOURCE
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <limits.h>
+#include <sched.h>
+#include <errno.h>
 
+#include "cpu_affinity.h"
 #include "exec.h"
 #include "timer.h"
 
@@ -56,7 +61,15 @@ pthread_t *spawn (int partition, int nb_partitions, int nb_threads, int nb_towns
 	params->nb_towns = nb_towns;
 	params->seed = seed;
 
-	pthread_create (tid, NULL, spawn_worker, params);
+	int status = pthread_create (tid, NULL, spawn_worker, params);
+	assert (status == 0);
+
+	char *machine[] = IDCHIRE;
+	cpu_set_t *cpu_set = mask_for_partition(partition, machine);
+	status = pthread_setaffinity_np (*tid, sizeof(cpu_set_t), cpu_set);
+	assert (status == 0);
+	free(cpu_set);
+
 	return tid;	
 }
 
