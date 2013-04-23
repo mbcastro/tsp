@@ -77,10 +77,8 @@ tsp_t_pointer init_execution(int partition, int n_partitions, int n_workers, int
 	return ret;
 }
 
-execution_info_t start_execution(tsp_t_pointer tsp) {
-	execution_info_t ret;
-	ret = do_work(tsp);
-	return ret;
+void start_execution(tsp_t_pointer tsp) {	
+	do_work(tsp);
 }
 
 void end_execution (tsp_t_pointer tsp) {

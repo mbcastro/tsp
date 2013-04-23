@@ -14,7 +14,7 @@ include_directories(${CMAKE_BINARY_DIR}/src)
 link_libraries("-lm -lpthread")
 
 # set general compilation flags
-set (CMAKE_C_FLAGS "-Wall -O6")
+set (CMAKE_C_FLAGS "-Wall -O3")
 
 #Gets the page size for the current architecture
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DPAGE_SIZE=`${CMAKE_BINARY_DIR}/utils/bin/getpagesize`")
