@@ -52,7 +52,7 @@ void *spawn_worker(void* params) {
 	return NULL;
 }
 
-pthread_t *spawn (int partition, int nb_partitions, int nb_threads, int nb_towns, int seed) {
+pthread_t *spawn (int partition, int nb_partitions, int nb_threads, int nb_towns, int seed, char* machine) {
 	pthread_t *tid = (pthread_t *)malloc (sizeof(pthread_t));
 	struct execution_parameters *params = (struct execution_parameters*) malloc (sizeof(struct execution_parameters));
 	params->partition = partition;
@@ -64,11 +64,13 @@ pthread_t *spawn (int partition, int nb_partitions, int nb_threads, int nb_towns
 	int status = pthread_create (tid, NULL, spawn_worker, params);
 	assert (status == 0);
 
-	char *machine[] = IDCHIRE;
-	cpu_set_t *cpu_set = mask_for_partition(partition, machine);
-	status = pthread_setaffinity_np (*tid, sizeof(cpu_set_t), cpu_set);
-	assert (status == 0);
-	free(cpu_set);
+	if (machine) {
+		char **machine_sched = get_machine_sched(machine);
+		cpu_set_t *cpu_set = mask_for_partition(partition, machine_sched);
+		status = pthread_setaffinity_np (*tid, sizeof(cpu_set_t), cpu_set);
+		assert (status == 0);
+		free(cpu_set);
+	}
 
 	return tid;	
 }
@@ -78,8 +80,8 @@ int main (int argc, char **argv) {
 	int i;
 
 	CHECK_PAGE_SIZE();
-	if (argc != 5) {
-		fprintf (stderr, "Usage: %s <nb_threads> <nb_towns> <seed> <nb_partitions>\n", argv[0]);
+	if (argc != 5 && argc != 6) {
+		fprintf (stderr, "Usage: %s <nb_threads> <nb_towns> <seed> <nb_partitions> [machine]\n", argv[0]);
 		return 1;
 	}
 
@@ -95,6 +97,8 @@ int main (int argc, char **argv) {
 	int seed = atoi(argv[3]);
 	int nb_partitions = atoi(argv[4]);
 	assert(nb_partitions > 0);
+	char *machine = (argc == 6) ? argv[5] : NULL;
+
 
 	LOG ("nb_threads = %3d nb_towns = %3d seed = %d nb_partitions = %d\n", 
 		nb_threads, nb_towns, seed, nb_partitions);
@@ -104,7 +108,7 @@ int main (int argc, char **argv) {
 	pthread_t **tids = (pthread_t **) malloc (sizeof(pthread_t *) * nb_partitions);
 	assert (tids != NULL);	
 	for (i = 0; i < nb_partitions; i++)
-		tids[i] = spawn(i, nb_partitions, nb_threads, nb_towns, seed);
+		tids[i] = spawn(i, nb_partitions, nb_threads, nb_towns, seed, machine);
 	for (i = 0; i < nb_partitions; i++) {
 		pthread_join (*(tids[i]), NULL);
 		free(tids[i]);

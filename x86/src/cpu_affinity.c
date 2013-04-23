@@ -4,6 +4,7 @@
 #include <string.h>
 #include <assert.h>
 
+#include "defs.h"
 #include "cpu_affinity.h"
 
 static const char *nexttoken(const char *q,  int sep) {
@@ -108,4 +109,22 @@ cpu_set_t* mask_for_partition(int partition, char** machine) {
 	cpulist_create(buffer, 256, mask,  sizeof(cpu_set_t));
 	LOG("CPU Mask for partition %d: %s\n", partition, buffer);
 	return mask;
+}
+
+const char *IDCHIRE[] = {
+	"0-7,192-199",		"8-15,200-207", 	"16-23,208-215", 	"24-31,216-223",  
+	"32-39,224-231",	"40-47,232-239",	"48-55,240-247",	"56-63,248-255",  	
+	"64-71,256-263",	"72-79,264-271",	"80-87,272-279",	"88-95,280-287",  	
+	"96-103,288-295",	"104-111,296-303",	"112-119,304-311",	"120-127,312-319",	
+	"128-135,320-327",	"136-143,328-335",	"144-151,336-343",	"152-159,344-351",	
+	"160-167,352-359",	"168-175,360-367",	"176-183,368-375",	"184-191,376-383" 
+};
+const char *IDROUILLE[] = {"0-7", "8-15", "16-23", "24-31"};
+
+char **get_machine_sched(char *machine_name) {
+	if (strcmp("idchire", machine_name) == 0)
+		return (char **)IDCHIRE;
+	if (strcmp("idrouille", machine_name) == 0)
+		return (char **)IDROUILLE;
+	return NULL;
 }

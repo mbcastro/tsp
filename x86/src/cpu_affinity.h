@@ -3,36 +3,12 @@
 
 #include <sched.h>
 
-#define IDCHIRE_SIZE 24
-#define IDCHIRE {      \
-	"0-7,192-199",     \
-	"8-15,200-207",    \
-	"16-23,208-215",   \
-	"24-31,216-223",   \
-	"32-39,224-231",   \
-	"40-47,232-239",   \
-	"48-55,240-247",   \
-	"56-63,248-255",   \
-	"64-71,256-263",   \
-	"72-79,264-271",   \
-	"80-87,272-279",   \
-	"88-95,280-287",   \
-	"96-103,288-295",  \
-	"104-111,296-303", \
-	"112-119,304-311", \
-	"120-127,312-319", \
-	"128-135,320-327", \
-	"136-143,328-335", \
-	"144-151,336-343", \
-	"152-159,344-351", \
-	"160-167,352-359", \
-	"168-175,360-367", \
-	"176-183,368-375", \
-	"184-191,376-383"  \
-}
+#define cpuset_nbits(setsize)	 (8 * (setsize))
 
-#define cpuset_nbits(setsize)    (8 * (setsize))
+extern const char *IDCHIRE[];
+extern const char *IDROUILLE[];
 
+char **get_machine_sched(char *machine_name);
 cpu_set_t* mask_for_partition(int partition, char** machine);
 
 #endif
