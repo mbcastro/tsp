@@ -1,12 +1,6 @@
-#include <stdio.h>
-#include <stdlib.h>
 #include <mppa/osconfig.h>
-#include <assert.h>
 
 #include "tsp_mppa.h"
-#include "exec.h"
-#include "timer.h"
-
 
 static int *comm_buffer;
 static int clusters;
@@ -23,8 +17,8 @@ int main (int argc, const char **argv) {
 		return 1;
 	}
 
-	uint64_t timer_start = __k1_io_read64((void *)0x70084040);
-    unsigned long start = get_time();
+	mppa_init_time();
+    uint64_t start = mppa_get_time();
 	
 	nb_threads = atoi(argv[1]);
 	nb_towns = atoi(argv[2]);
@@ -66,11 +60,8 @@ int main (int argc, const char **argv) {
 	close_broadcast(broad);
 	free(comm_buffer);
 
-	timer_end = __k1_io_read64((void *)0x70084040);
-	uint64_t ncycles = timer_end - timer_start;
-	float exec_time0 = (float)ncycles / 400.0;
-    unsigned long exec_time = diff_time(start, get_time());
-	printf ("%lu\t%g\t%d\t%d\t%d\t%d\t%d\n", exec_time, exec_time0, min, nb_threads, nb_towns, seed, clusters);
+   	uint64_t exec_time = mppa_diff_time(start, mppa_get_time());
+	printf ("%llu\t\t%d\t%d\t%d\t%d\t%d\n", exec_time, min, nb_threads, nb_towns, seed, clusters);
 
 	mppa_exit(0);
 	return 0;

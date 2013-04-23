@@ -18,7 +18,8 @@ int main (int argc, char **argv) {
 		fprintf (stderr, "Usage: %s <nb_threads> <nb_towns> <seed> <nb_partitions=1>\n", argv[0]);
 		return 1;
 	}
-
+	
+	init_time();
 	unsigned long start = get_time();
 	
 	MUTEX_INIT(min_lock);

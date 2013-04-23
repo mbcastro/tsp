@@ -1,13 +1,6 @@
-#include <fcntl.h>
-#include <mppaipc.h>
 #include <mppa/osconfig.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <assert.h>
 
 #include "tsp_mppa.h"
-#include "exec.h"
-#include "timer.h"
 
 static int clusters;
 MUTEX_CREATE(min_slave_to_master_lock, static);

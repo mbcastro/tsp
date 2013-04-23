@@ -70,6 +70,7 @@ int main (int argc, char **argv) {
 		return 1;
 	}
 
+	init_time();
 	unsigned long start = get_time();	
 
 	COND_VAR_INIT(sync_barrier);

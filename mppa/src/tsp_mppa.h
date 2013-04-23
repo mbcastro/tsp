@@ -1,11 +1,9 @@
 #ifndef __TSP_MPPA_H
 #define __TSP_MPPA_H
 
-#include "exec.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <mppaipc.h>
+#include <inttypes.h>
+#include "exec.h"
 
 //to
 #define BROADCAST_MASK "/mppa/portal/%d:%d"
@@ -17,6 +15,7 @@
 #define FALSE 0
 
 #define IO_NODE_RANK 128
+#define MPPA_FREQUENCY 400
 
 typedef enum {
 	BARRIER_MASTER,
@@ -56,5 +55,9 @@ barrier_t *create_master_barrier (char *path_master, char *path_slave, int clust
 barrier_t *create_slave_barrier (char *path_master, char *path_slave);
 void barrier_wait (barrier_t *barrier);
 void close_barrier (barrier_t *barrier);
+
+void mppa_init_time(void);
+inline uint64_t mppa_get_time(void);
+inline uint64_t mppa_diff_time(uint64_t t1, uint64_t t2);
 
 #endif // __TSP_MPPA_H

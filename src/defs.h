@@ -1,8 +1,12 @@
 #ifndef __DEFS_H
 #define __DEFS_H
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 #include <assert.h>
+#include <limits.h>
 #include <pthread.h>
 
 #define MAX_TOWNS		20

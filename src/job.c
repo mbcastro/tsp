@@ -1,7 +1,3 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
 #include "job.h"
 
 void init_queue (job_queue_t *q, unsigned long max_size) {
