@@ -20,6 +20,7 @@ static broadcast_t *broad;
 
 static int min_local = INT_MAX;
 
+static tsp_t_pointer tsp_instance;
 
 int main(int argc, char **argv) {	
 	int i, n_threads = atoi(argv[0]);
@@ -39,7 +40,10 @@ int main(int argc, char **argv) {
 
 	barrier_wait(sync_barrier);
 
-	start_execution(rank, clusters, n_threads, atoi(argv[1]), atoi(argv[2]));    
+	tsp_instance = init_execution(rank, clusters, n_threads, atoi(argv[1]), atoi(argv[2]));
+	start_execution(tsp_instance);
+	end_execution(tsp_instance);
+
     LOG("Cluster %d exiting. Min: %d\n", rank, min_local);
     
     barrier_wait(sync_barrier);
@@ -53,10 +57,10 @@ int main(int argc, char **argv) {
 }
 
 
-void new_minimun_distance_found(int num_worker, int length) {
+void new_minimun_distance_found(tsp_t_pointer tsp_instance) {
 	MUTEX_LOCK(min_slave_to_master_lock);
-	broadcast (broad, &length, sizeof(int));
-	min_local = length;
+	broadcast (broad, &tsp_instance->min_distance, sizeof(int));
+	min_local = tsp_instance->min_distance;
 	MUTEX_UNLOCK(min_slave_to_master_lock);
 }
 
@@ -65,6 +69,6 @@ void callback_slave (mppa_sigval_t sigval) {
 	for (i = 0; i < clusters; i++)
 		if (comm_buffer[i] < min) 
 			min = comm_buffer[i];
-	update_minimum(min);
+	tsp_update_minimum_distance(tsp_instance, min);	
 	LOG("Slave: Received a callback. %d\n", min);
 }

@@ -64,7 +64,7 @@ int main (int argc, const char **argv) {
 	return 0;
 }
 
-void new_minimun_distance_found (int num_worker, int lenght) {
+void new_minimun_distance_found(tsp_t_pointer tsp) {
 	printf("SHOULD NOT BE HERE!!!\n");
 }
 
