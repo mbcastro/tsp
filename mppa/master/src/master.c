@@ -21,9 +21,12 @@ int main (int argc, const char **argv) {
     uint64_t start = mppa_get_time();
 	
 	nb_threads = atoi(argv[1]);
+	assert (nb_threads > 0 && nb_threads <= MAX_THREADS_PER_CLUSTER);
 	nb_towns = atoi(argv[2]);
+	assert (nb_towns <= MAX_TOWNS);
 	seed = atoi(argv[3]);
 	clusters = atoi(argv[4]);
+	assert (clusters > 0 && clusters <= MAX_CLUSTERS);
 
 	LOG("Starting execution. Towns = %d, Seed = %d -- Clusters = %d, Threads/Cluster %d\n", 
 		nb_towns, seed, clusters, nb_threads);

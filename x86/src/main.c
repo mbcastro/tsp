@@ -76,9 +76,12 @@ int main (int argc, char **argv) {
 	COND_VAR_INIT(sync_barrier);
 	MUTEX_INIT(min_lock);
 	int nb_threads = atoi(argv[1]);
+	assert(nb_threads > 0);
 	int nb_towns = atoi(argv[2]);
+	assert (nb_towns <= MAX_TOWNS);
 	int seed = atoi(argv[3]);
 	int nb_partitions = atoi(argv[4]);
+	assert(nb_partitions > 0);
 
 	LOG ("nb_threads = %3d nb_towns = %3d seed = %d nb_partitions = %d\n", 
 		nb_threads, nb_towns, seed, nb_partitions);

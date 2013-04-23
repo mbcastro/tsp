@@ -15,6 +15,8 @@
 #define FALSE 0
 
 #define IO_NODE_RANK 128
+#define MAX_CLUSTERS 16
+#define MAX_THREADS_PER_CLUSTER 16
 #define MPPA_FREQUENCY 400
 
 typedef enum {

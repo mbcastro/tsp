@@ -24,7 +24,9 @@ int main (int argc, char **argv) {
 	
 	MUTEX_INIT(min_lock);
 	int nb_threads = atoi(argv[1]);
+	assert (nb_threads > 0);
 	int nb_towns =  atoi(argv[2]);
+	assert (nb_towns <= MAX_TOWNS);
 	int seed =  atoi(argv[3]);
 	int nb_partitions =  atoi(argv[4]);
 	assert(nb_partitions == 1);
