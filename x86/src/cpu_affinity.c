@@ -56,10 +56,56 @@ static int cpulist_parse(const char *str, cpu_set_t *set, size_t setsize) {
 }
 
 
+/*
+ * Returns human readable representation of the cpuset. The output format is
+ * a list of CPUs with ranges (for example, "0,1,3-9").
+ */
+static char *cpulist_create(char *str, size_t len, cpu_set_t *set, size_t setsize) {
+	int i;
+	char *ptr = str;
+	int entry_made = 0;
+	size_t max = cpuset_nbits(setsize);
+
+	for (i = 0; i < max; i++) {
+		if (CPU_ISSET_S(i, setsize, set)) {
+			int j, rlen;
+			int run = 0;
+			entry_made = 1;
+			for (j = i + 1; j < max; j++) {
+				if (CPU_ISSET_S(j, setsize, set))
+					run++;
+				else
+					break;
+			}
+			if (!run)
+				rlen = snprintf(ptr, len, "%d,", i);
+			else if (run == 1) {
+				rlen = snprintf(ptr, len, "%d,%d,", i, i + 1);
+				i++;
+			} else {
+				rlen = snprintf(ptr, len, "%d-%d,", i, i + run);
+				i += run;
+			}
+			if (rlen < 0 || rlen + 1 > len)
+				return NULL;
+			ptr += rlen;
+			len -= rlen;
+		}
+	}
+	ptr -= entry_made;
+	*ptr = '\0';
+
+	return str;
+}
+
+
 cpu_set_t* mask_for_partition(int partition, char** machine) {
 	cpu_set_t *mask = (cpu_set_t *)malloc(sizeof(cpu_set_t));
 	char *list = machine[partition];
 	int status = cpulist_parse(list, mask, sizeof(cpu_set_t));
 	assert(status == 0);
+	char buffer[256];
+	cpulist_create(buffer, 256, mask,  sizeof(cpu_set_t));
+	printf("Mascara %s\n", buffer);
 	return mask;
 }
