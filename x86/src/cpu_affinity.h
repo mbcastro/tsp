@@ -31,6 +31,8 @@
 	"184-191,376-383"  \
 }
 
+#define cpuset_nbits(setsize)    (8 * (setsize))
+
 cpu_set_t* mask_for_partition(int partition, char** machine);
 
 #endif
