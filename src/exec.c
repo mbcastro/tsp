@@ -68,7 +68,6 @@ void print_distance_matrix (distance_matrix_t *distance) {
 tsp_t_pointer init_execution(int partition, int n_partitions, int n_workers, int n_towns, int seed) {
 	init_time();
 	tsp_t_pointer ret = init_tsp(partition, n_partitions, n_workers, n_towns, seed);
-	LOG("Created TSP %d %p\n", partition, ret);
 	return ret;
 }
 

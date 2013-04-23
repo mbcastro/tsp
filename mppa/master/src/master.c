@@ -18,6 +18,14 @@ int main (int argc, const char **argv) {
 	int rank, nb_threads, nb_towns, seed, status = 0, i;
 	int pid;
 
+	if (argc != 5) {
+		fprintf (stderr, "Usage: %s <nb_threads> <nb_towns> <seed> <nb_partitions>\n", argv[0]);
+		return 1;
+	}
+
+	uint64_t timer_start = __k1_io_read64((void *)0x70084040);
+    unsigned long start = get_time();
+	
 	nb_threads = atoi(argv[1]);
 	nb_towns = atoi(argv[2]);
 	seed = atoi(argv[3]);
@@ -30,8 +38,6 @@ int main (int argc, const char **argv) {
 	comm_buffer = (int *) malloc(comm_buffer_size);
 	for (i = 0; i <= clusters; i++) 
 		comm_buffer[i] = INT_MAX;
-	
-    unsigned long start = get_time();	
 
 	barrier_t *sync_barrier = create_master_barrier (BARRIER_SYNC_MASTER, BARRIER_SYNC_SLAVE, clusters);
 	broad = create_broadcast (clusters, BROADCAST_MASK, comm_buffer, comm_buffer_size, TRUE, callback_master);
@@ -56,12 +62,15 @@ int main (int argc, const char **argv) {
 	for (i = 0; i < clusters; i++)
 		min = (comm_buffer[i] < min) ? comm_buffer[i] : min;
 
-    unsigned long exec_time = diff_time(start, get_time());
-	printf ("%lu\t%d\t%d\t%d\t%d\t%d\n", exec_time, min, nb_threads, nb_towns, seed, clusters);
-
 	close_barrier(sync_barrier);
 	close_broadcast(broad);
 	free(comm_buffer);
+
+	timer_end = __k1_io_read64((void *)0x70084040);
+	uint64_t ncycles = timer_end - timer_start;
+	float exec_time0 = (float)ncycles / 400.0;
+    unsigned long exec_time = diff_time(start, get_time());
+	printf ("%lu\t%g\t%d\t%d\t%d\t%d\t%d\n", exec_time, exec_time0, min, nb_threads, nb_towns, seed, clusters);
 
 	mppa_exit(0);
 	return 0;

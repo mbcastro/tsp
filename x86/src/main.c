@@ -93,13 +93,12 @@ int main (int argc, char **argv) {
 		free(tids[i]);
 	}
 
+	free (tids);
+	free(tsps);
 
     unsigned long exec_time = diff_time(start, get_time());
 	printf ("%lu\t%d\t%d\t%d\t%d\t%d\n", 
 		exec_time, min_distance,nb_threads, nb_towns, seed, nb_partitions);
-
-	free (tids);
-	free(tsps);
 
 	return 0;
 }

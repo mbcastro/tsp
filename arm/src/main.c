@@ -15,7 +15,7 @@ int main (int argc, char **argv) {
 
 	CHECK_PAGE_SIZE();
 	if (argc != 5) {
-		fprintf (stderr, "Usage: %s <nb_threads > <nb_towns> <seed> <nb_partitions=1>\n", argv[0]);
+		fprintf (stderr, "Usage: %s <nb_threads> <nb_towns> <seed> <nb_partitions=1>\n", argv[0]);
 		return 1;
 	}
 
