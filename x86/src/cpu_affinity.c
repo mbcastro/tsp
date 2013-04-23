@@ -106,6 +106,6 @@ cpu_set_t* mask_for_partition(int partition, char** machine) {
 	assert(status == 0);
 	char buffer[256];
 	cpulist_create(buffer, 256, mask,  sizeof(cpu_set_t));
-	printf("Mascara %s\n", buffer);
+	LOG("CPU Mask for partition %d: %s\n", partition, buffer);
 	return mask;
 }
