@@ -42,7 +42,7 @@ static int cpulist_parse(const char *str, cpu_set_t *set, size_t setsize) {
 			if (c1 != NULL && (c2 == NULL || c1 < c2))
 				if (sscanf(c1, "%u", &s) < 1) {
 					return 1;
-			}
+				}
 		}
 
 		if (!(a <= b))

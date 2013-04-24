@@ -1,5 +1,10 @@
 #include "job.h"
 
+#ifdef NO_CACHE_COHERENCE //See close_queue() for details
+static int waiting_threads = 0;
+#endif
+
+
 void init_queue (job_queue_t *q, unsigned long max_size) {
 	q->max_size = max_size;
 	q->begin = 0;
@@ -22,7 +27,6 @@ void add_job (job_queue_t *q, job_t j) {
 
 queue_status_t get_job (job_queue_t *q, job_t *j) {
 	int index;
-
 #ifndef NO_CACHE_COHERENCE
 	if(q->begin == q->end && q->closed)
 		return QUEUE_CLOSED;
@@ -33,7 +37,13 @@ queue_status_t get_job (job_queue_t *q, job_t *j) {
 			COND_VAR_MUTEX_UNLOCK(q->cond_var);
 			return QUEUE_CLOSED;
 		}
+#ifdef NO_CACHE_COHERENCE
+		waiting_threads++; //see close_queue()
 		COND_VAR_WAIT(q->cond_var);
+		waiting_threads--;
+#else
+		COND_VAR_WAIT(q->cond_var);
+#endif		
 	}
 
 	index = q->begin++;
@@ -45,7 +55,13 @@ queue_status_t get_job (job_queue_t *q, job_t *j) {
 void close_queue (job_queue_t *q) {
 	COND_VAR_MUTEX_LOCK(q->cond_var);
 	q->closed = 1;
+#ifdef NO_CACHE_COHERENCE
+	int i;
+	for (i = 0; i < waiting_threads; i++) //Dirty trick to solve the problem of pthread_broadcast on MPPA
+		COND_VAR_SIGNAL(q->cond_var);
+#else
 	COND_VAR_BROADCAST(q->cond_var);
+#endif
 	COND_VAR_MUTEX_UNLOCK(q->cond_var);
 }
 

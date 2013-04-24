@@ -117,6 +117,8 @@ void close_broadcast (broadcast_t *broadcast) {
 	int i;
 	for (i = 0; i < broadcast->clusters; ++i)
 		close_portal(broadcast->portals[i]);
+	if (broadcast->includes_ionode)
+		close_portal(broadcast->portals[broadcast->clusters]);
 	free (broadcast->portals);
 	free (broadcast);
 }
