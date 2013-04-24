@@ -24,7 +24,7 @@ queue_status_t get_job (job_queue_t *q, job_t *j) {
 	int index;
 
 #ifndef NO_CACHE_COHERENCE
-	if(q->begin == q->end && is_queue_closed(q))
+	if(q->begin == q->end && q->closed)
 		return QUEUE_CLOSED;
 #endif
 	COND_VAR_MUTEX_LOCK(q->cond_var);
