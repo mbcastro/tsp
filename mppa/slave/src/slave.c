@@ -52,8 +52,8 @@ int main(int argc, char **argv) {
 
 void new_minimun_distance_found(tsp_t_pointer tsp_instance) {
 	MUTEX_LOCK(min_slave_to_master_lock);
-	broadcast (broad, &tsp_instance->min_distance, sizeof(int));
-	min_local = tsp_instance->min_distance;
+	min_local = tsp_get_shortest_path(tsp_instance);
+	broadcast (broad, &min_local, sizeof(int));	
 	MUTEX_UNLOCK(min_slave_to_master_lock);
 }
 

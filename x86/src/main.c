@@ -12,12 +12,12 @@
 
 static tsp_t_pointer *tsps;
 
-static int min_distance = INT_MAX;
+static int min_distance;
 MUTEX_CREATE(min_lock, static);
 
 //Initialization synchronization
 COND_VAR_CREATE(sync_barrier, static);
-static int running_count = 0;
+static int running_count;
 
 
 struct execution_parameters {
@@ -76,33 +76,15 @@ pthread_t *spawn (int partition, int nb_partitions, int nb_threads, int nb_towns
 }
 
 
-int main (int argc, char **argv) {
+void run_tsp (int nb_threads, int nb_towns, int seed, int nb_partitions, char* machine) {
 	int i;
 
-	CHECK_PAGE_SIZE();
-	if (argc != 5 && argc != 6) {
-		fprintf (stderr, "Usage: %s <nb_threads> <nb_towns> <seed> <nb_partitions> [machine]\n", argv[0]);
-		return 1;
-	}
-
-	init_time();
-	unsigned long start = get_time();	
-
-	COND_VAR_INIT(sync_barrier);
-	MUTEX_INIT(min_lock);
-	int nb_threads = atoi(argv[1]);
-	assert(nb_threads > 0);
-	int nb_towns = atoi(argv[2]);
-	assert (nb_towns <= MAX_TOWNS);
-	int seed = atoi(argv[3]);
-	int nb_partitions = atoi(argv[4]);
-	assert(nb_partitions > 0);
-	char *machine = (argc == 6) ? argv[5] : NULL;
-
-
+	unsigned long start = get_time();
 	LOG ("nb_threads = %3d nb_towns = %3d seed = %d nb_partitions = %d\n", 
 		nb_threads, nb_towns, seed, nb_partitions);
 
+	min_distance = INT_MAX;
+	running_count = 0;
 	tsps = 	(tsp_t_pointer *)(malloc(sizeof(tsp_t_pointer) * nb_partitions));
 	assert(tsps != NULL);
 	pthread_t **tids = (pthread_t **) malloc (sizeof(pthread_t *) * nb_partitions);
@@ -121,19 +103,65 @@ int main (int argc, char **argv) {
 	printf ("%lu\t%d\t%d\t%d\t%d\t%d\n", 
 		exec_time, min_distance,nb_threads, nb_towns, seed, nb_partitions);
 
+}
+
+int main (int argc, char **argv) {
+
+	CHECK_PAGE_SIZE();
+
+	if (argc != 5 && argc != 6 && argc != 7) {
+		fprintf (stderr, "Usage: %s <nb_threads> <nb_towns> <seed> <nb_partitions> [nb_executions machine]\n", argv[0]);
+		return 1;
+	}
+
+	init_time();
+	COND_VAR_INIT(sync_barrier);
+	MUTEX_INIT(min_lock);
+	
+	int *nb_threads = par_parse (argv[1]);
+	assert(nb_threads);
+	int *nb_towns = par_parse (argv[2]);
+	assert(nb_towns);
+	int seed = atoi(argv[3]);
+	int *nb_partitions = par_parse (argv[4]);
+	assert(nb_partitions);
+	int nb_executions = (argc == 6) ? atoi(argv[5]) : 1;
+	assert(nb_executions > 0);
+	char *machine = (argc == 7) ? argv[6] : NULL;
+	
+	int execution, town, partition, thread;
+	town = 0;
+	while (nb_towns[town] != 0) {
+		partition = 0;
+		while (nb_partitions[partition] != 0) {
+			thread = 0;
+			while (nb_threads[thread] != 0) {
+				assert (nb_threads[thread] > 0);
+				assert (nb_towns[town] <= MAX_TOWNS);
+				assert (nb_partitions[partition] > 0);
+				for (execution = 0; execution < nb_executions; execution++)
+					run_tsp(nb_threads[thread], nb_towns[town], seed, nb_partitions[partition], machine);
+				thread++;
+			}
+			partition++;
+		}
+		town++;
+	}
+	
 	return 0;
 }
 
 void new_minimun_distance_found(tsp_t_pointer tsp) {
 	int i;
+	int min = tsp_get_shortest_path(tsp);
 	for (i = 0; i < tsp->nb_partitions; i++) {
 		if (tsps[i] != tsp)
-			tsp_update_minimum_distance (tsps[i], tsp->min_distance);
+			tsp_update_minimum_distance (tsps[i], min);
 	}
-	if (min_distance > tsp->min_distance) {
+	if (min_distance > min) {
 		MUTEX_LOCK(min_lock);
-		if (min_distance > tsp->min_distance)
-			min_distance = tsp->min_distance;
+		if (min_distance > min)
+			min_distance = min;
 		MUTEX_UNLOCK(min_lock);
 	}
 }

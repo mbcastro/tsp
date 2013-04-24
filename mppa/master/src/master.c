@@ -8,67 +8,6 @@ static broadcast_t *broad;
 
 void callback_master (mppa_sigval_t sigval);
 
-
-static const char *nexttoken(const char *q,  int sep) {
-	if (q)
-		q = strchr(q, sep);
-	if (q)
-		q++;
-	return q;
-}
-
-static int* par_parse(const char *str) {
-	const char *p, *q;
-	q = str;
-	
-	int *set, size, max_size;
-	max_size = 1024;
-	size = 0;
-	set = (int*)calloc(max_size, sizeof(int));
-
-	while (p = q, q = nexttoken(q, ','), p) {
-		unsigned int a;	/* beginning of range */
-		unsigned int b;	/* end of range */
-		unsigned int s;	/* stride */
-		const char *c1, *c2;
-
-		if (sscanf(p, "%u", &a) < 1) {
-			free(set);
-			return NULL;
-		}
-		b = a;
-		s = 1;
-
-		c1 = nexttoken(p, '-');
-		c2 = nexttoken(p, ',');
-		if (c1 != NULL && (c2 == NULL || c1 < c2)) {
-			if (sscanf(c1, "%u", &b) < 1) {
-				free(set);
-				return NULL;
-			}
-			c1 = nexttoken(c1, ':');
-			if (c1 != NULL && (c2 == NULL || c1 < c2))
-				if (sscanf(c1, "%u", &s) < 1) {
-					free(set);
-					return NULL;
-				}
-		}
-
-		if (!(a <= b)) {
-			free(set);
-			return NULL;
-		}
-
-		while (a <= b) {
-			set[size++] = a;
-			a += s;
-		}
-	}
-
-	return set;
-}
-
-
 void run_tsp (int nb_threads, int nb_towns, int seed, int clusters_p) {
   
 	int rank, status = 0, i;
@@ -86,8 +25,10 @@ void run_tsp (int nb_threads, int nb_towns, int seed, int clusters_p) {
 	for (i = 0; i <= clusters; i++) 
 		comm_buffer[i] = INT_MAX;
 
+	LOG("Creating communication portals\n");
 	barrier_t *sync_barrier = create_master_barrier (BARRIER_SYNC_MASTER, BARRIER_SYNC_SLAVE, clusters);
 	broad = create_broadcast (clusters, BROADCAST_MASK, comm_buffer, comm_buffer_size, TRUE, callback_master);
+
 
 	char **argv = (char**) malloc(sizeof (char*) * 4);
 	for (i = 0; i < 4; i++)
@@ -98,6 +39,7 @@ void run_tsp (int nb_threads, int nb_towns, int seed, int clusters_p) {
 	sprintf(argv[2], "%d", seed);
 	sprintf(argv[3], "%d", clusters);
 
+	LOG("Spawning clusters.\n");
   	for (rank = 0; rank < clusters; rank++) {
 		pid = mppa_spawn(rank, NULL, "tsp_lock_mppa_slave", (const char **)argv, NULL);
 		assert(pid >= 0);
@@ -131,10 +73,11 @@ void run_tsp (int nb_threads, int nb_towns, int seed, int clusters_p) {
 }
 
 int main (int argc, const char **argv) {
-	int *nb_threads, *nb_towns, seed, *nb_partitions, town, partition, thread;
+	int *nb_threads, *nb_towns, seed, *nb_partitions, nb_executions;
+	int town, partition, thread, execution;
 
-	if (argc != 5) {
-		fprintf (stderr, "Usage: %s <nb_threads> <nb_towns> <seed> <nb_partitions>\n", argv[0]);
+	if (argc != 5 && argc != 6) {
+		fprintf (stderr, "Usage: %s <nb_threads> <nb_towns> <seed> <nb_partitions> [nb_executions]\n", argv[0]);
 		return 1;
 	}
 
@@ -148,6 +91,13 @@ int main (int argc, const char **argv) {
 	nb_partitions = par_parse (argv[4]);
 	assert(nb_partitions);
 
+	if(argc == 6) {
+		nb_executions = atoi(argv[5]);
+		assert(nb_executions > 0);
+	}
+	else 
+		nb_executions = 1;
+
 	town = 0;
 	while (nb_towns[town] != 0) {
 		partition = 0;
@@ -157,7 +107,8 @@ int main (int argc, const char **argv) {
 				assert (nb_threads[thread] > 0 && nb_threads[thread] <= MAX_THREADS_PER_CLUSTER);
 				assert (nb_towns[town] <= MAX_TOWNS);
 				assert (nb_partitions[partition] > 0 && nb_partitions[partition] <= MAX_CLUSTERS);
-				run_tsp(nb_threads[thread], nb_towns[town], seed, nb_partitions[partition]);
+				for (execution = 0; execution < nb_executions; execution++)
+					run_tsp(nb_threads[thread], nb_towns[town], seed, nb_partitions[partition]);
 				thread++;
 			}
 			partition++;

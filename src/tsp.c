@@ -38,6 +38,13 @@ void init_distance (tsp_t *tsp, int seed) {
 	}
 }
 
+static inline void intern_update_minimum_distance(tsp_t_pointer tsp, int new_distance) {
+#ifdef NO_CACHE_COHERENCE		
+	__builtin_k1_swu(&tsp->min_distance, new_distance);	
+#else 
+	tsp->min_distance = new_distance;
+#endif		
+}
 
 tsp_t_pointer init_tsp(int partition, int nb_partitions, int nb_workers, int nb_towns, int seed) {
 	int total;
@@ -51,7 +58,8 @@ tsp_t_pointer init_tsp(int partition, int nb_partitions, int nb_workers, int nb_
 	tsp->partition = partition;
 	tsp->nb_partitions = nb_partitions;
 	tsp->nb_workers = nb_workers;
-	tsp->min_distance = INT_MAX;
+	intern_update_minimum_distance(tsp, INT_MAX);
+
 	tsp->distance->n_towns = nb_towns;
 	init_distance(tsp, seed);
 
@@ -180,16 +188,17 @@ void tsp_log_shortest_path (tsp_t *tsp) {
 
 inline int tsp_get_shortest_path (tsp_t *tsp) {
 #ifdef NO_CACHE_COHERENCE
-	__builtin_k1_dflush();
-#endif
+	return __builtin_k1_lwu(&tsp->min_distance);
+#else
 	return tsp->min_distance;
+#endif
 }
 
 int tsp_update_minimum_distance (tsp_t_pointer tsp, int new_distance) {
 	int min_updated = 0;
 	MUTEX_LOCK(tsp->mutex);
-	if (new_distance < tsp->min_distance) {
-		tsp->min_distance = new_distance;
+	if (new_distance < tsp_get_shortest_path(tsp)) {
+		intern_update_minimum_distance(tsp, new_distance);
 		min_updated = 1;
 	}
 	MUTEX_UNLOCK(tsp->mutex);
