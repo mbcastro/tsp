@@ -141,15 +141,13 @@ void distributor (tsp_t_pointer tsp_par, int hops, int len, path_t *path, int *j
 }
 
 void generate_jobs (tsp_t_pointer tsp) {
-	int i, job_count = 0;
+	int job_count = 0;
 	path_t path;	
 	LOG("Task generation starting...\n");
 	path [0] = 0;
 	distributor (tsp, 1, 0, &path, &job_count);
 	close_queue(&tsp->queue);
 	LOG("Task generation complete.\n");
-	for (i = 0; i < tsp->nb_partitions; i++)
-		COND_VAR_SIGNAL(tsp->queue.cond_var);
 }
 
 void *worker (void *pars) {
@@ -171,7 +169,7 @@ void *worker (void *pars) {
 				break;
 		}
 
-	LOG ("Worker [%3d] terminates, %4d jobs done with %16lu cuts.\n", p->num_worker, jobcount, cuts);
+	LOG ("Worker [%3d,%3d] terminates, %4d jobs done with %16lu cuts.\n", p->tsp->partition, p->num_worker, jobcount, cuts);
 	free(pars);
 	return NULL;
 }

@@ -43,7 +43,10 @@ queue_status_t get_job (job_queue_t *q, job_t *j) {
 } 
 
 void close_queue (job_queue_t *q) {
+	COND_VAR_MUTEX_LOCK(q->cond_var);
 	q->closed = 1;
+	COND_VAR_BROADCAST(q->cond_var);
+	COND_VAR_MUTEX_UNLOCK(q->cond_var);
 }
 
 inline int is_queue_closed (job_queue_t *q) {
