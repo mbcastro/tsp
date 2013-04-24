@@ -24,19 +24,15 @@ typedef struct {
 	COND_VAR_CREATE(cond_var);
 } job_queue_t;
 
-void init_queue (job_queue_t *q, unsigned long max_size);
-void free_queue (job_queue_t *q);
-
-void add_job (job_queue_t *q, job_t j);
-
 typedef enum {
 	QUEUE_CLOSED = 0,
 	QUEUE_OK = 1
 } queue_status_t;
 
+void init_queue (job_queue_t *q, unsigned long max_size);
+void add_job (job_queue_t *q, job_t j);
 queue_status_t get_job (job_queue_t *q, job_t *j);
-
 void close_queue (job_queue_t *q);
-inline int is_queue_closed (job_queue_t *q);
+void free_queue (job_queue_t *q);
 
 #endif
