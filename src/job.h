@@ -16,12 +16,14 @@ typedef struct job_queue_node {
 } job_queue_node_t;
 
 typedef struct {
+	job_queue_node_t *buffer;
 	unsigned long max_size;
+	int closed;
+	char PADDING [PADDING(sizeof(job_queue_node_t *) + sizeof (unsigned long) + sizeof(int))];
 	int begin;
 	int end;
-	int closed;
-	job_queue_node_t *buffer;
 	COND_VAR_CREATE(cond_var);
+	char PADDING2 [PADDING(COND_VAR_SIZE) + 2 * sizeof(int)];
 } job_queue_t;
 
 typedef enum {

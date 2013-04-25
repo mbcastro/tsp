@@ -48,7 +48,6 @@ static inline void intern_update_minimum_distance(tsp_t_pointer tsp, int new_dis
 
 tsp_t_pointer init_tsp(int partition, int nb_partitions, int nb_workers, int nb_towns, int seed) {
 	int total;
-	
 	tsp_t_pointer tsp = (tsp_t_pointer) malloc (sizeof (tsp_t));
 	assert(tsp != NULL);
 	tsp->distance = (distance_matrix_t *) malloc (sizeof (distance_matrix_t));
@@ -88,7 +87,7 @@ void free_tsp(tsp_t_pointer tsp) {
 	free(tsp);
 }
 
-int present (int city, int hops, path_t *path) {
+inline int present (int city, int hops, path_t *path) {
 	unsigned int i;
 	for (i = 0; i < hops; i++)
 		if ((*path)[i] == city) return 1;
@@ -155,7 +154,7 @@ void generate_jobs (tsp_t_pointer tsp) {
 	path [0] = 0;
 	distributor (tsp, 1, 0, &path, &job_count);
 	close_queue(&tsp->queue);
-	LOG("Task generation complete.\n");
+	LOG("Task generation complete (%d).\n", job_count);
 }
 
 void *worker (void *pars) {
@@ -182,10 +181,6 @@ void *worker (void *pars) {
 	return NULL;
 }
 
-void tsp_log_shortest_path (tsp_t *tsp) {
-	LOG ("Shortest path len = %d\n", tsp_get_shortest_path(tsp));
-}
-
 inline int tsp_get_shortest_path (tsp_t *tsp) {
 #ifdef NO_CACHE_COHERENCE
 	return __builtin_k1_lwu(&tsp->min_distance);
@@ -194,7 +189,7 @@ inline int tsp_get_shortest_path (tsp_t *tsp) {
 #endif
 }
 
-int tsp_update_minimum_distance (tsp_t_pointer tsp, int new_distance) {
+inline int tsp_update_minimum_distance (tsp_t_pointer tsp, int new_distance) {
 	int min_updated = 0;
 	MUTEX_LOCK(tsp->mutex);
 	if (new_distance < tsp_get_shortest_path(tsp)) {

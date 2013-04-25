@@ -16,6 +16,14 @@
 
 #define CHECK_PAGE_SIZE() if (PAGE_SIZE != sysconf(_SC_PAGESIZE)) printf("WARNING: Page size is different from the compilation parameter\n")
 
+/*
+ * We pad the structures to avoid false sharing 
+ * during the execution. We combine this passing with the 
+ * __attribute__ ((aligned (PAGE_SIZE))) directive on the 
+ * variable declaration or posix_memalign for memory allocation
+ */
+#define PADDING(struct_size) PAGE_SIZE - struct_size + (struct_size / PAGE_SIZE * PAGE_SIZE)
+
 #ifdef MT 
 
 struct cond_var_struct {
@@ -26,7 +34,8 @@ struct cond_var_struct {
 #define GET_3TH_ARG(arg1, arg2, arg3, ...) arg3
 
 //COND_VAR_CREATE
-#define COND_VAR_CREATE_1(cv) struct cond_var_struct cv
+#define COND_VAR_T struct cond_var_struct
+#define COND_VAR_CREATE_1(cv) COND_VAR_T cv
 #define COND_VAR_CREATE_2(cv, modifiers) modifiers COND_VAR_CREATE_1(cv)
 #define COND_VAR_CREATE_MACRO_CHOOSER(...) \
     GET_3TH_ARG(__VA_ARGS__, COND_VAR_CREATE_2, COND_VAR_CREATE_1, )
@@ -41,33 +50,39 @@ struct cond_var_struct {
 
 #ifdef CAS
 
-#define MUTEX_CREATE_1(m)	unsigned int m
+#define MUTEX_T unsigned int
 #define MUTEX_INIT(m) 		m = 0
 #define MUTEX_LOCK(m) 		while(__sync_lock_test_and_set(&m, 1))
 #define MUTEX_UNLOCK(m) 	__sync_lock_release(&m)	
 
 #else
 
-#define MUTEX_CREATE_1(m)	pthread_mutex_t m
+#define MUTEX_T pthread_mutex_t
 #define MUTEX_INIT(m) 		pthread_mutex_init(&m, NULL)
 #define MUTEX_LOCK(m) 		pthread_mutex_lock(&m)
 #define MUTEX_UNLOCK(m) 	pthread_mutex_unlock(&m)
 
 #endif //CAS
 
+#define MUTEX_CREATE_1(m) MUTEX_T m
 #define MUTEX_CREATE_2(m, modifiers) modifiers MUTEX_CREATE_1(m)
 #define MUTEX_CREATE_MACRO_CHOOSER(...) \
     GET_3TH_ARG(__VA_ARGS__, MUTEX_CREATE_2, MUTEX_CREATE_1, )
 #define MUTEX_CREATE(...) MUTEX_CREATE_MACRO_CHOOSER(__VA_ARGS__)(__VA_ARGS__)
 
+#define MUTEX_SIZE sizeof (MUTEX_T)
+#define COND_VAR_SIZE sizeof(COND_VAR_T)
+
 #else //end MT
 
 //Sequential version
+#define MUTEX_SIZE 0
 #define MUTEX_CREATE(...)	/* none */
 #define MUTEX_INIT(m)		/* none */
 #define MUTEX_LOCK(m)		/* none */
 #define MUTEX_UNLOCK(m)		/* none */
 
+#define COND_VAR_SIZE 0
 #define COND_VAR_CREATE(...) 
 #define COND_VAR_INIT(cv) 
 #define COND_VAR_SIGNAL(cv) 
