@@ -3,7 +3,7 @@
 #include "tsp.h"
 
 void init_distance (tsp_t *tsp, int seed) {
-	int n = tsp->distance->n_towns;	
+	int n = tsp->distance->nb_towns;	
 	int x[n], y[n];
 	int tempdist [n];	
 	int i, j, k, city = 0;
@@ -59,7 +59,7 @@ tsp_t_pointer init_tsp(int partition, int nb_partitions, int nb_workers, int nb_
 	tsp->nb_workers = nb_workers;
 	intern_update_minimum_distance(tsp, INT_MAX);
 
-	tsp->distance->n_towns = nb_towns;
+	tsp->distance->nb_towns = nb_towns;
 	init_distance(tsp, seed);
 
 	tsp->max_hops = 0;
@@ -94,29 +94,32 @@ inline int present (int city, int hops, path_t *path) {
 	return 0;
 }
 
-void tsp (tsp_t_pointer tsp_par, int hops, int len, path_t *path, unsigned long *cuts, int num_worker) {
+void tsp (tsp_t_pointer tsp_par, int hops, int len, path_t *path, unsigned long *cuts, unsigned long long *path_cuts, int num_worker) {
 	int i;
 	if (len >= tsp_get_shortest_path(tsp_par)) {
 		(*cuts)++;
+		unsigned long long height = tsp_par->distance->nb_towns - hops;
+		assert (height < 21);
+		(*path_cuts) += FACTORIAL_TABLE[height];
 		return;
 	}
-	if (hops == tsp_par->distance->n_towns) {
+	if (hops == tsp_par->distance->nb_towns) {
 		if (tsp_update_minimum_distance(tsp_par, len)) {
 			new_minimun_distance_found(tsp_par);
 			LOG ("worker[%d] finds path len = %3d :", num_worker, len);
-			for (i = 0; i < tsp_par->distance->n_towns; i++)
+			for (i = 0; i < tsp_par->distance->nb_towns; i++)
 				LOG ("%2d ", (*path)[i]);
 			LOG ("\n");
 		}
 	} else {
 		int city, me, dist;
 		me = (*path)[hops - 1];
-		for (i = 0; i < tsp_par->distance->n_towns; i++) {
+		for (i = 0; i < tsp_par->distance->nb_towns; i++) {
 			city = tsp_par->distance->info[me][i].to_city;
 			if (!present (city, hops, path)) {
 				(*path)[hops] = city;
 				dist = tsp_par->distance->info[me][i].dist;
-				tsp (tsp_par, hops + 1, len + dist, path, cuts, num_worker);
+				tsp (tsp_par, hops + 1, len + dist, path, cuts, path_cuts, num_worker);
 			}
 		}
 	}
@@ -136,7 +139,7 @@ void distributor (tsp_t_pointer tsp_par, int hops, int len, path_t *path, int *j
 	} else {
 		int me, city, dist;
 		me = (*path)[hops - 1];
-		for (i = 0; i < tsp_par->distance->n_towns; i++) {
+		for (i = 0; i < tsp_par->distance->nb_towns; i++) {
 			city = tsp_par->distance->info[me][i].to_city;
 			if (!present(city, hops, path)) {
 				(*path)[hops] = city;
@@ -163,20 +166,22 @@ void *worker (void *pars) {
 	int jobcount = 0;
 	job_t job;
 	unsigned long cuts = 0;
+	unsigned long long path_cuts = 0;
 	int finished = 0;
 
 	while (!finished)
 		switch (get_job (&p->tsp->queue, &job)) {
 			case QUEUE_OK:
 				jobcount++;
-				tsp (p->tsp, p->tsp->max_hops, job.len, &job.path, &cuts, p->num_worker);
+				tsp (p->tsp, p->tsp->max_hops, job.len, &job.path, &cuts, &path_cuts, p->num_worker);
 				break;
 			case QUEUE_CLOSED:
 				finished = 1;
 				break;
 		}
 
-	LOG ("Worker [%3d,%3d] terminates, %4d jobs done with %16lu cuts.\n", p->tsp->partition, p->num_worker, jobcount, cuts);
+	LOG ("Worker [%3d,%3d] terminates, %4d jobs done with %16lu cuts %20llu path cuts %10g cut efficiency.\n", 
+		p->tsp->partition, p->num_worker, jobcount, cuts, path_cuts, 1.0 * path_cuts / cuts);
 	free(pars);
 	return NULL;
 }

@@ -4,7 +4,7 @@
 #include "job.h"
 
 typedef struct {
-	int n_towns;
+	int nb_towns;
 	struct {
 		int to_city;
 		int dist;
@@ -36,7 +36,6 @@ typedef struct {
 
 tsp_t_pointer init_tsp(int partition, int n_partitions, int n_workers, int n_towns, int seed);
 void free_tsp(tsp_t_pointer tsp);
-void tsp (tsp_t_pointer tsp, int hops, int len, path_t *path, unsigned long *cuts, int num_worker);
 void generate_jobs (tsp_t_pointer tsp);
 void *worker (void *tsp_worker_par);
 inline int tsp_get_shortest_path (tsp_t_pointer tsp);

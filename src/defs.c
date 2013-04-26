@@ -1,5 +1,30 @@
 #include "defs.h"
 
+const unsigned long long FACTORIAL_TABLE[] = {
+/*00*/ 0x1,
+/*01*/ 0x1,
+/*02*/ 0x2,
+/*03*/ 0x6,
+/*04*/ 0x18,
+/*05*/ 0x78,
+/*06*/ 0x2d0,
+/*07*/ 0x13b0,
+/*08*/ 0x9d80,
+/*09*/ 0x58980,
+/*10*/ 0x375f00,
+/*11*/ 0x2611500,
+/*12*/ 0x1c8cfc00,
+/*13*/ 0x17328cc00,
+/*14*/ 0x144c3b2800,
+/*15*/ 0x13077775800,
+/*16*/ 0x130777758000,
+/*17*/ 0x1437eeecd8000,
+/*18*/ 0x16beecca730000,
+/*19*/ 0x1b02b9306890000,
+/*20*/ 0x21c3677c82b40000
+};
+
+
 const static unsigned int simple_rng_s_mw_default = 521288629;
 const static unsigned int simple_rng_s_mz_default = 362436069;
 

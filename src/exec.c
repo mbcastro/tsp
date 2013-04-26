@@ -3,11 +3,11 @@
 void print_distance_matrix (distance_matrix_t *distance) {
 	int i, j;
 
-	LOG ("distance.n_towns = %d\n", distance->n_towns);
+	LOG ("distance.n_towns = %d\n", distance->nb_towns);
 
-	for (i = 0; i<distance->n_towns; i++) {
+	for (i = 0; i<distance->nb_towns; i++) {
 		LOG ("distance.dst [%1d]",i);
-		for (j = 0; j<distance->n_towns; j++) {
+		for (j = 0; j<distance->nb_towns; j++) {
 			LOG (" [d:%2d, to:%2d] ", distance->info[i][j].dist, distance->info[i][j].to_city);
 		}
 		LOG (";\n\n");

@@ -9,7 +9,8 @@
 #include <limits.h>
 #include <pthread.h>
 
-#define MAX_TOWNS		20
+#define MAX_TOWNS		30
+extern const unsigned long long FACTORIAL_TABLE[];
 #define MIN_JOBS_THREAD 100
 #define MAX_GRID_X		100
 #define MAX_GRID_Y		100
@@ -124,5 +125,7 @@ inline unsigned int simple_rng_next(struct rand_state_struct *current_state);
 #endif //DEF_RAND
 
 int* par_parse(const char *str);
+
+
 
 #endif //__DEFS_H
