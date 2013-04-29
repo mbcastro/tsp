@@ -13,7 +13,8 @@
 static tsp_t_pointer *tsps;
 
 static int min_distance;
-MUTEX_CREATE(min_lock, static);
+static int next_partition;
+MUTEX_CREATE(main_lock, static);
 
 //Initialization synchronization
 COND_VAR_CREATE(sync_barrier, static);
@@ -21,7 +22,8 @@ static int running_count;
 
 
 struct execution_parameters {
-	int partition;
+	int cluster;
+	int nb_clusters;
 	int nb_partitions;
 	int nb_threads;
 	int nb_towns;
@@ -41,21 +43,22 @@ void wait_barrier (int limit) {
  
 void *spawn_worker(void* params) {
 	struct execution_parameters *p = (struct execution_parameters *)params;
-	tsps[p->partition] = init_execution(p->partition, p->nb_partitions, p->nb_threads, p->nb_towns, p->seed);
+	tsps[p->cluster] = init_execution(p->cluster, p->nb_clusters, p->nb_partitions, p->nb_threads, p->nb_towns, p->seed);
 	
-	wait_barrier (p->nb_partitions);
-	start_execution(tsps[p->partition]);
-	wait_barrier (p->nb_partitions);
-	end_execution(tsps[p->partition]);
+	wait_barrier (p->nb_clusters);
+	start_execution(tsps[p->cluster]);
+	wait_barrier (p->nb_clusters);
+	end_execution(tsps[p->cluster]);
 
 	free(params);
 	return NULL;
 }
 
-pthread_t *spawn (int partition, int nb_partitions, int nb_threads, int nb_towns, int seed, char* machine) {
+pthread_t *spawn (int cluster, int nb_clusters, int nb_partitions, int nb_threads, int nb_towns, int seed, char* machine) {
 	pthread_t *tid = (pthread_t *)malloc (sizeof(pthread_t));
 	struct execution_parameters *params = (struct execution_parameters*) malloc (sizeof(struct execution_parameters));
-	params->partition = partition;
+	params->cluster = cluster;
+	params->nb_clusters = nb_clusters;
 	params->nb_partitions = nb_partitions;
 	params->nb_threads = nb_threads;
 	params->nb_towns = nb_towns;
@@ -66,7 +69,7 @@ pthread_t *spawn (int partition, int nb_partitions, int nb_threads, int nb_towns
 
 	if (machine) {
 		char **machine_sched = get_machine_sched(machine);
-		cpu_set_t *cpu_set = mask_for_partition(partition, machine_sched);
+		cpu_set_t *cpu_set = mask_for_partition(cluster, machine_sched);
 		status = pthread_setaffinity_np (*tid, sizeof(cpu_set_t), cpu_set);
 		assert (status == 0);
 		free(cpu_set);
@@ -76,22 +79,24 @@ pthread_t *spawn (int partition, int nb_partitions, int nb_threads, int nb_towns
 }
 
 
-void run_tsp (int nb_threads, int nb_towns, int seed, int nb_partitions, char* machine) {
+void run_tsp (int nb_threads, int nb_towns, int seed, int nb_clusters, char* machine) {
 	int i;
 
 	unsigned long start = get_time();
-	LOG ("nb_threads = %3d nb_towns = %3d seed = %d nb_partitions = %d\n", 
-		nb_threads, nb_towns, seed, nb_partitions);
+	int nb_partitions = nb_clusters * PARTITIONS_PER_CLUSTER;
+	LOG ("nb_clusters = %3d nb_partitions = %3d nb_threads = %3d nb_towns = %3d seed = %d \n", 
+		nb_clusters, nb_partitions, nb_threads, nb_towns, seed);
 
 	min_distance = INT_MAX;
+	next_partition = 0;
 	running_count = 0;
-	tsps = 	(tsp_t_pointer *)(malloc(sizeof(tsp_t_pointer) * nb_partitions));
+	tsps = 	(tsp_t_pointer *)(malloc(sizeof(tsp_t_pointer) * nb_clusters));
 	assert(tsps != NULL);
-	pthread_t **tids = (pthread_t **) malloc (sizeof(pthread_t *) * nb_partitions);
+	pthread_t **tids = (pthread_t **) malloc (sizeof(pthread_t *) * nb_clusters);
 	assert (tids != NULL);	
-	for (i = 0; i < nb_partitions; i++)
-		tids[i] = spawn(i, nb_partitions, nb_threads, nb_towns, seed, machine);
-	for (i = 0; i < nb_partitions; i++) {
+	for (i = 0; i < nb_clusters; i++)
+		tids[i] = spawn(i, nb_clusters, nb_partitions, nb_threads, nb_towns, seed, machine);
+	for (i = 0; i < nb_clusters; i++) {
 		pthread_join (*(tids[i]), NULL);
 		free(tids[i]);
 	}
@@ -100,8 +105,8 @@ void run_tsp (int nb_threads, int nb_towns, int seed, int nb_partitions, char* m
 	free(tsps);
 
     unsigned long exec_time = diff_time(start, get_time());
-	printf ("%lu\t%d\t%d\t%d\t%d\t%d", 
-		exec_time, min_distance,nb_threads, nb_towns, seed, nb_partitions);
+	printf ("%lu\t%d\t%d\t%d\t%d\t%d\t%d\n", 
+		exec_time, min_distance,nb_threads, nb_towns, seed, nb_clusters, nb_partitions);
 
 }
 
@@ -116,7 +121,7 @@ int main (int argc, char **argv) {
 
 	init_time();
 	COND_VAR_INIT(sync_barrier);
-	MUTEX_INIT(min_lock);
+	MUTEX_INIT(main_lock);
 	
 	int *nb_threads = par_parse (argv[1]);
 	assert(nb_threads);
@@ -154,15 +159,23 @@ int main (int argc, char **argv) {
 void new_minimun_distance_found(tsp_t_pointer tsp) {
 	int i;
 	int min = tsp_get_shortest_path(tsp);
-	for (i = 0; i < tsp->nb_partitions; i++) {
+	for (i = 0; i < tsp->nb_clusters; i++) {
 		if (tsps[i] != tsp)
 			tsp_update_minimum_distance (tsps[i], min);
 	}
 	if (min_distance > min) {
-		MUTEX_LOCK(min_lock);
+		MUTEX_LOCK(main_lock);
 		if (min_distance > min)
 			min_distance = min;
-		MUTEX_UNLOCK(min_lock);
+		MUTEX_UNLOCK(main_lock);
 	}
 }
 
+int get_next_partition(tsp_t_pointer tsp) {
+	int ret = -1;
+	MUTEX_LOCK(main_lock);
+	if (next_partition < tsp->nb_partitions)
+		ret = next_partition++;
+	MUTEX_UNLOCK(main_lock);
+	return ret;
+}

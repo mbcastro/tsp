@@ -13,10 +13,11 @@ typedef struct {
 
 typedef struct {
 	int max_hops;
-	int partition;
+	int cluster_id;
+	int nb_clusters;
+	int nb_threads;
 	int nb_partitions;
-	int nb_workers;
-	char PADDING1[PADDING(4 * sizeof (int))];
+	char PADDING1[PADDING(5 * sizeof (int))];
 
 	distance_matrix_t *distance;
 	char PADDING2[PADDING(sizeof(distance_matrix_t))];
@@ -31,17 +32,18 @@ typedef tsp_t * tsp_t_pointer;
 
 typedef struct {
 	tsp_t *tsp;
-	int num_worker;
-} tsp_worker_par_t;
+	int thread_id;
+} tsp_thread_par_t;
 
-tsp_t_pointer init_tsp(int partition, int n_partitions, int n_workers, int n_towns, int seed);
+tsp_t_pointer init_tsp(int cluster_id, int nb_clusters, int nb_partitions, int nb_threads, int nb_towns, int seed);
 void free_tsp(tsp_t_pointer tsp);
-void generate_jobs (tsp_t_pointer tsp);
+
 void *worker (void *tsp_worker_par);
 inline int tsp_get_shortest_path (tsp_t_pointer tsp);
 inline int tsp_update_minimum_distance(tsp_t_pointer tsp, int length);
 
 //callback
 extern void new_minimun_distance_found(tsp_t_pointer tsp);
+extern int get_next_partition(tsp_t_pointer tsp);
 
 #endif

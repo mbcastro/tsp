@@ -4,7 +4,7 @@
 #include "defs.h"
 #include "tsp.h"
 
-tsp_t_pointer init_execution(int partition, int n_partitions, int n_workers, int n_towns, int seed);
+tsp_t_pointer init_execution(int cluster_id, int nb_clusters, int nb_partitions, int nb_threads, int nb_towns, int seed);
 void start_execution(tsp_t_pointer tsp);
 void end_execution (tsp_t_pointer tsp);
 

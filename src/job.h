@@ -15,26 +15,28 @@ typedef struct job_queue_node {
 	struct job_queue_node *next;
 } job_queue_node_t;
 
+typedef enum {
+	QUEUE_CLOSED = 0,
+	QUEUE_WAIT = 1,
+	QUEUE_OK = 2
+} queue_status_t;
+
 typedef struct {
 	job_queue_node_t *buffer;
 	unsigned long max_size;
-	int closed;
-	char PADDING [PADDING(sizeof(job_queue_node_t *) + sizeof (unsigned long) + sizeof(int))];
+	queue_status_t status;
+	int (*repopulate_queue)(void*);
+	void *repopulate_queue_par;
+	char PADDING [PADDING(sizeof(job_queue_node_t *) + sizeof (unsigned long) + sizeof(int) + sizeof (int (*)(void*)) + sizeof (void *))];
 	int begin;
 	int end;
 	COND_VAR_CREATE(cond_var);
 	char PADDING2 [PADDING(COND_VAR_SIZE) + 2 * sizeof(int)];
 } job_queue_t;
 
-typedef enum {
-	QUEUE_CLOSED = 0,
-	QUEUE_OK = 1
-} queue_status_t;
-
-void init_queue (job_queue_t *q, unsigned long max_size);
+void init_queue (job_queue_t *q, unsigned long max_size, int (*repopulate_queue)(void*), void *repopulate_queue_par);
 void add_job (job_queue_t *q, job_t j);
-queue_status_t get_job (job_queue_t *q, job_t *j);
-void close_queue (job_queue_t *q);
+int get_job (job_queue_t *q, job_t *j);
 void free_queue (job_queue_t *q);
 
 #endif

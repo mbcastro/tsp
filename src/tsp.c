@@ -2,6 +2,8 @@
 
 #include "tsp.h"
 
+int repopulate_queue (void *tsp_par);
+
 void init_distance (tsp_t *tsp, int seed) {
 	int n = tsp->distance->nb_towns;	
 	int x[n], y[n];
@@ -38,6 +40,21 @@ void init_distance (tsp_t *tsp, int seed) {
 	}
 }
 
+void print_distance_matrix (distance_matrix_t *distance) {
+	int i, j;
+
+	LOG ("distance.n_towns = %d\n", distance->nb_towns);
+
+	for (i = 0; i<distance->nb_towns; i++) {
+		LOG ("distance.dst [%1d]",i);
+		for (j = 0; j<distance->nb_towns; j++) {
+			LOG (" [d:%2d, to:%2d] ", distance->info[i][j].dist, distance->info[i][j].to_city);
+		}
+		LOG (";\n\n");
+	}
+	LOG ("done ...\n");
+}
+
 static inline void intern_update_minimum_distance(tsp_t_pointer tsp, int new_distance) {
 #ifdef NO_CACHE_COHERENCE		
 	__builtin_k1_swu(&tsp->min_distance, new_distance);	
@@ -46,7 +63,18 @@ static inline void intern_update_minimum_distance(tsp_t_pointer tsp, int new_dis
 #endif		
 }
 
-tsp_t_pointer init_tsp(int partition, int nb_partitions, int nb_workers, int nb_towns, int seed) {
+inline int init_max_hops(tsp_t_pointer tsp) {
+	int total = 1;
+	tsp->max_hops = 0;
+	while (total < MIN_JOBS_THREAD * tsp->nb_threads * tsp->nb_clusters && tsp->max_hops < tsp->distance->nb_towns - 1) {
+		tsp->max_hops++;
+		total *= tsp->distance->nb_towns - tsp->max_hops;
+	}
+	tsp->max_hops++;
+	return total;
+}
+
+tsp_t_pointer init_tsp(int cluster_id, int nb_clusters, int nb_partitions, int nb_threads, int nb_towns, int seed) {
 	int total;
 	tsp_t_pointer tsp = (tsp_t_pointer) malloc (sizeof (tsp_t));
 	assert(tsp != NULL);
@@ -54,29 +82,23 @@ tsp_t_pointer init_tsp(int partition, int nb_partitions, int nb_workers, int nb_
 	assert(tsp->distance != NULL);
 
 	MUTEX_INIT(tsp->mutex);
-	tsp->partition = partition;
+	tsp->cluster_id = cluster_id;
+	tsp->nb_clusters = nb_clusters;
+	tsp->nb_threads = nb_threads;
 	tsp->nb_partitions = nb_partitions;
-	tsp->nb_workers = nb_workers;
 	intern_update_minimum_distance(tsp, INT_MAX);
 
 	tsp->distance->nb_towns = nb_towns;
 	init_distance(tsp, seed);
+	total = init_max_hops(tsp);
 
-	tsp->max_hops = 0;
-	total = 1;
-	while (total < MIN_JOBS_THREAD * nb_workers * nb_partitions && tsp->max_hops < nb_towns - 1) {
-		tsp->max_hops++;
-		total *= nb_towns - tsp->max_hops;
-	}
-	tsp->max_hops++;
-
-	if (partition == 0) {
+	if (cluster_id == 0) {
 		LOG("MAX_HOPS %d\n", tsp->max_hops);
 		LOG("NB_TASKS %d\n", total);
 	}
 	
 	unsigned long queue_size = total / nb_partitions + total % nb_partitions;
-	init_queue(&tsp->queue, queue_size);
+	init_queue(&tsp->queue, queue_size, repopulate_queue, tsp);
 
 	return tsp;
 }
@@ -94,19 +116,21 @@ inline int present (int city, int hops, path_t *path) {
 	return 0;
 }
 
-void tsp (tsp_t_pointer tsp_par, int hops, int len, path_t *path, unsigned long *cuts, unsigned long long *path_cuts, int num_worker) {
+void tsp (tsp_t_pointer tsp_par, int hops, int len, path_t *path, unsigned long *cuts, unsigned long long *path_cuts, int thread_id) {
 	int i;
 	if (len >= tsp_get_shortest_path(tsp_par)) {
+#ifdef DEBUG	
 		(*cuts)++;
 		unsigned long long height = tsp_par->distance->nb_towns - hops;
 		assert (height < 21);
 		(*path_cuts) += FACTORIAL_TABLE[height];
+#endif	
 		return;
 	}
 	if (hops == tsp_par->distance->nb_towns) {
 		if (tsp_update_minimum_distance(tsp_par, len)) {
 			new_minimun_distance_found(tsp_par);
-			LOG ("worker[%d] finds path len = %3d :", num_worker, len);
+			LOG ("worker[%d] finds path len = %3d :", thread_id, len);
 			for (i = 0; i < tsp_par->distance->nb_towns; i++)
 				LOG ("%2d ", (*path)[i]);
 			LOG ("\n");
@@ -119,17 +143,17 @@ void tsp (tsp_t_pointer tsp_par, int hops, int len, path_t *path, unsigned long 
 			if (!present (city, hops, path)) {
 				(*path)[hops] = city;
 				dist = tsp_par->distance->info[me][i].dist;
-				tsp (tsp_par, hops + 1, len + dist, path, cuts, path_cuts, num_worker);
+				tsp (tsp_par, hops + 1, len + dist, path, cuts, path_cuts, thread_id);
 			}
 		}
 	}
 }
 
-void distributor (tsp_t_pointer tsp_par, int hops, int len, path_t *path, int *job_index) {
+void distributor (tsp_t_pointer tsp_par, int partition_id, int hops, int len, path_t *path, int *job_index) {
 	job_t j;
 	int i;	
 	if (hops == tsp_par->max_hops) {
-		if ((*job_index) % tsp_par->nb_partitions == tsp_par->partition) {
+		if ((*job_index) % tsp_par->nb_partitions == partition_id) {
 			j.len = len;
 			for (i = 0; i < hops; i++)
 				j.path[i] = (*path)[i];			
@@ -144,44 +168,50 @@ void distributor (tsp_t_pointer tsp_par, int hops, int len, path_t *path, int *j
 			if (!present(city, hops, path)) {
 				(*path)[hops] = city;
 				dist = tsp_par->distance->info[me][i].dist;
-				distributor (tsp_par, hops + 1, len + dist, path, job_index);       
+				distributor (tsp_par, partition_id, hops + 1, len + dist, path, job_index);       
 			}
 		}
 	}
 }
 
-void generate_jobs (tsp_t_pointer tsp) {
+void generate_jobs (tsp_t_pointer tsp, int partition_id) {
 	int job_count = 0;
 	path_t path;	
 	LOG("Task generation starting...\n");
 	path [0] = 0;
-	distributor (tsp, 1, 0, &path, &job_count);
-	close_queue(&tsp->queue);
-	LOG("Task generation complete (%d).\n", job_count);
+	distributor (tsp, partition_id, 1, 0, &path, &job_count);
+	LOG("Task generation for partition %d complete (%d).\n", partition_id, job_count);
+}
+
+int repopulate_queue (void *tsp_par) {
+
+	tsp_t_pointer tsp = (tsp_t_pointer)tsp_par;
+	int partition_id = get_next_partition(tsp);
+	
+	if (partition_id < 0)
+		return 0;		
+
+	LOG ("Repopulating queue, partition %d\n", partition_id);
+	generate_jobs(tsp, partition_id);
+	return 1;
+
 }
 
 void *worker (void *pars) {
-	tsp_worker_par_t *p = (tsp_worker_par_t *)pars;
+	tsp_thread_par_t *p = (tsp_thread_par_t *)pars;
 
 	int jobcount = 0;
 	job_t job;
 	unsigned long cuts = 0;
 	unsigned long long path_cuts = 0;
-	int finished = 0;
 
-	while (!finished)
-		switch (get_job (&p->tsp->queue, &job)) {
-			case QUEUE_OK:
-				jobcount++;
-				tsp (p->tsp, p->tsp->max_hops, job.len, &job.path, &cuts, &path_cuts, p->num_worker);
-				break;
-			case QUEUE_CLOSED:
-				finished = 1;
-				break;
-		}
+	while (get_job (&p->tsp->queue, &job)) {
+		jobcount++;
+		tsp (p->tsp, p->tsp->max_hops, job.len, &job.path, &cuts, &path_cuts, p->thread_id);
+	}
 
 	LOG ("Worker [%3d,%3d] terminates, %4d jobs done with %16lu cuts %20llu path cuts %10g cut efficiency.\n", 
-		p->tsp->partition, p->num_worker, jobcount, cuts, path_cuts, 1.0 * path_cuts / cuts);
+		p->tsp->cluster_id, p->thread_id, jobcount, cuts, path_cuts, 1.0 * path_cuts / cuts);
 	free(pars);
 	return NULL;
 }

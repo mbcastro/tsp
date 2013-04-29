@@ -4,17 +4,33 @@
 static int waiting_threads = 0;
 #endif
 
-
-void init_queue (job_queue_t *q, unsigned long max_size) {
-	q->max_size = max_size;
+inline void reset_queue(job_queue_t *q) {
 	q->begin = 0;
 	q->end = 0;
-	q->closed = 0;
+}
+
+void init_queue (job_queue_t *q, unsigned long max_size, int (*repopulate_queue)(void*), void *repopulate_queue_par) {
+	q->max_size = max_size;
+	q->status = QUEUE_OK;
+	q->repopulate_queue = repopulate_queue;
+	q->repopulate_queue_par = repopulate_queue_par;
+	reset_queue(q);
 	
 	LOG("Trying to allocate %lu bytes for the queue\n", sizeof(job_queue_node_t) * max_size);
 	q->buffer = (job_queue_node_t *) malloc(sizeof(job_queue_node_t) * max_size);
 	assert(q->buffer != NULL);
 	COND_VAR_INIT(q->cond_var);
+}
+
+static void close_queue (job_queue_t *q) {	
+	q->status = QUEUE_CLOSED;
+#ifdef NO_CACHE_COHERENCE
+	int i;
+	for (i = 0; i < waiting_threads; i++) //Dirty trick to solve the problem of pthread_broadcast on MPPA
+		COND_VAR_SIGNAL(q->cond_var);
+#else
+	COND_VAR_BROADCAST(q->cond_var);
+#endif
 }
 
 void add_job (job_queue_t *q, job_t j) {
@@ -26,49 +42,49 @@ void add_job (job_queue_t *q, job_t j) {
 	COND_VAR_MUTEX_UNLOCK(q->cond_var);
 }
 
-queue_status_t get_job (job_queue_t *q, job_t *j) {
+int get_job (job_queue_t *q, job_t *j) {
 	int index;
-
+	
 #ifdef NO_CACHE_COHERENCE
 	__k1_rmb();
 #endif
 
-	if(q->begin == q->end && q->closed)
-		return QUEUE_CLOSED;
+	if(q->begin == q->end && q->status == QUEUE_CLOSED)
+		return 0;
 	
 	COND_VAR_MUTEX_LOCK(q->cond_var);
 	while (q->begin == q->end) {
-		if (q->closed)	{
-			COND_VAR_MUTEX_UNLOCK(q->cond_var);
-			return QUEUE_CLOSED;
+		switch (q->status) {
+			case QUEUE_CLOSED:
+				COND_VAR_MUTEX_UNLOCK(q->cond_var);
+				return 0;
+			case QUEUE_WAIT:
+				#ifdef NO_CACHE_COHERENCE
+				waiting_threads++; //see close_queue()
+				COND_VAR_WAIT(q->cond_var);
+				waiting_threads--;
+				#else
+				COND_VAR_WAIT(q->cond_var);
+				#endif
+				break;
+			case QUEUE_OK:
+				q->status = QUEUE_WAIT;
+				reset_queue(q);
+				COND_VAR_MUTEX_UNLOCK(q->cond_var);
+				int jobs_added = q->repopulate_queue(q->repopulate_queue_par);
+				COND_VAR_MUTEX_LOCK(q->cond_var);
+				if (jobs_added)
+					q->status = QUEUE_OK;
+				else
+					close_queue(q);
 		}
-#ifdef NO_CACHE_COHERENCE
-		waiting_threads++; //see close_queue()
-		COND_VAR_WAIT(q->cond_var);
-		waiting_threads--;
-#else
-		COND_VAR_WAIT(q->cond_var);
-#endif		
 	}
 
 	index = q->begin++;
 	COND_VAR_MUTEX_UNLOCK(q->cond_var);
 	memcpy(j, &q->buffer[index].tsp_job, sizeof(job_t));		
-	return QUEUE_OK;
+	return 1;
 } 
-
-void close_queue (job_queue_t *q) {
-	COND_VAR_MUTEX_LOCK(q->cond_var);
-	q->closed = 1;
-#ifdef NO_CACHE_COHERENCE
-	int i;
-	for (i = 0; i < waiting_threads; i++) //Dirty trick to solve the problem of pthread_broadcast on MPPA
-		COND_VAR_SIGNAL(q->cond_var);
-#else
-	COND_VAR_BROADCAST(q->cond_var);
-#endif
-	COND_VAR_MUTEX_UNLOCK(q->cond_var);
-}
 
 void free_queue (job_queue_t *q) {
 	free(q->buffer);
