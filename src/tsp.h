@@ -44,6 +44,12 @@ inline int tsp_update_minimum_distance(tsp_t_pointer tsp, int length);
 
 //callback
 extern void new_minimun_distance_found(tsp_t_pointer tsp);
-extern int get_next_partition(tsp_t_pointer tsp);
+
+typedef struct {
+	int start;
+	int end;
+} partition_interval_t;
+
+extern partition_interval_t get_next_partition(tsp_t_pointer tsp);
 
 #endif

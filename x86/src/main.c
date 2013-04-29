@@ -171,11 +171,42 @@ void new_minimun_distance_found(tsp_t_pointer tsp) {
 	}
 }
 
-int get_next_partition(tsp_t_pointer tsp) {
-	int ret = -1;
-	MUTEX_LOCK(main_lock);
+
+
+static inline partition_interval_t get_next_partition_block_size(tsp_t_pointer tsp, int block_size) {
+	partition_interval_t ret;
+	ret.start = ret.end = -1;	
 	if (next_partition < tsp->nb_partitions)
-		ret = next_partition++;
+		ret.start = next_partition;
+		if (next_partition + block_size - 1 < tsp->nb_partitions)
+			ret.end = next_partition + block_size - 1;
+		else
+			ret.end = ret.start + tsp->nb_partitions - ret.start;
+		next_partition += block_size;
+	return ret;
+}
+
+inline partition_interval_t get_next_partition_block(tsp_t_pointer tsp) {	
+	MUTEX_LOCK(main_lock);
+	partition_interval_t ret = get_next_partition_block_size(tsp, 5);
 	MUTEX_UNLOCK(main_lock);
 	return ret;
+}
+
+inline partition_interval_t get_next_partition_fss(tsp_t_pointer tsp, int alfa) {
+	MUTEX_LOCK(main_lock);
+	int block_size = (tsp->nb_partitions - next_partition) / (tsp->nb_clusters * alfa);
+	if (block_size < 1) 
+		block_size = 1;
+	partition_interval_t ret = get_next_partition_block_size(tsp, block_size);
+	MUTEX_UNLOCK(main_lock);
+	return ret;
+}
+
+inline partition_interval_t get_next_partition_gss(tsp_t_pointer tsp) {
+	return get_next_partition_fss(tsp, 1);
+}
+
+partition_interval_t get_next_partition(tsp_t_pointer tsp) {	
+	return get_next_partition_gss(tsp);
 }
