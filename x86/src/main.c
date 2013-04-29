@@ -100,7 +100,7 @@ void run_tsp (int nb_threads, int nb_towns, int seed, int nb_partitions, char* m
 	free(tsps);
 
     unsigned long exec_time = diff_time(start, get_time());
-	printf ("%lu\t%d\t%d\t%d\t%d\t%d\n", 
+	printf ("%lu\t%d\t%d\t%d\t%d\t%d", 
 		exec_time, min_distance,nb_threads, nb_towns, seed, nb_partitions);
 
 }
