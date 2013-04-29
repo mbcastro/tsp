@@ -177,24 +177,19 @@ void distributor (tsp_t_pointer tsp_par, int partition_id, int hops, int len, pa
 void generate_jobs (tsp_t_pointer tsp, int partition_id) {
 	int job_count = 0;
 	path_t path;	
-	LOG("Task generation starting...\n");
 	path [0] = 0;
+	LOG("Task generation %d starting...\n", partition_id);
 	distributor (tsp, partition_id, 1, 0, &path, &job_count);
 	LOG("Task generation for partition %d complete (%d).\n", partition_id, job_count);
 }
 
 int repopulate_queue (void *tsp_par) {
-
 	tsp_t_pointer tsp = (tsp_t_pointer)tsp_par;
-	int partition_id = get_next_partition(tsp);
-	
+	int partition_id = get_next_partition(tsp);	
 	if (partition_id < 0)
-		return 0;		
-
-	LOG ("Repopulating queue, partition %d\n", partition_id);
+		return 0;
 	generate_jobs(tsp, partition_id);
 	return 1;
-
 }
 
 void *worker (void *pars) {

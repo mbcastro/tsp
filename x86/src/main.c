@@ -115,7 +115,7 @@ int main (int argc, char **argv) {
 	CHECK_PAGE_SIZE();
 
 	if (argc != 5 && argc != 6 && argc != 7) {
-		fprintf (stderr, "Usage: %s <nb_threads> <nb_towns> <seed> <nb_partitions> [nb_executions machine]\n", argv[0]);
+		fprintf (stderr, "Usage: %s <nb_threads> <nb_towns> <seed> <nb_clusters> [nb_executions machine]\n", argv[0]);
 		return 1;
 	}
 
@@ -128,27 +128,27 @@ int main (int argc, char **argv) {
 	int *nb_towns = par_parse (argv[2]);
 	assert(nb_towns);
 	int seed = atoi(argv[3]);
-	int *nb_partitions = par_parse (argv[4]);
-	assert(nb_partitions);
+	int *nb_clusters = par_parse (argv[4]);
+	assert(nb_clusters);
 	int nb_executions = (argc == 6) ? atoi(argv[5]) : 1;
 	assert(nb_executions > 0);
 	char *machine = (argc == 7) ? argv[6] : NULL;
 	
-	int execution, town, partition, thread;
+	int execution, town, cluster, thread;
 	town = 0;
 	while (nb_towns[town] != 0) {
-		partition = 0;
-		while (nb_partitions[partition] != 0) {
+		cluster = 0;
+		while (nb_clusters[cluster] != 0) {
 			thread = 0;
 			while (nb_threads[thread] != 0) {
 				assert (nb_threads[thread] > 0);
 				assert (nb_towns[town] <= MAX_TOWNS);
-				assert (nb_partitions[partition] > 0);
+				assert (nb_clusters[cluster] > 0);
 				for (execution = 0; execution < nb_executions; execution++)
-					run_tsp(nb_threads[thread], nb_towns[town], seed, nb_partitions[partition], machine);
+					run_tsp(nb_threads[thread], nb_towns[town], seed, nb_clusters[cluster], machine);
 				thread++;
 			}
-			partition++;
+			cluster++;
 		}
 		town++;
 	}
