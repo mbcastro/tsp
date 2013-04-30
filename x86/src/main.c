@@ -105,7 +105,7 @@ void run_tsp (int nb_threads, int nb_towns, int seed, int nb_clusters, char* mac
 	free(tsps);
 
     unsigned long exec_time = diff_time(start, get_time());
-	printf ("%lu\t%d\t%d\t%d\t%d\t%d\t%d\n", 
+	printf ("%lu\t%d\t%d\t%d\t%d\t%d\t%d", 
 		exec_time, min_distance,nb_threads, nb_towns, seed, nb_clusters, nb_partitions);
 
 }
@@ -171,8 +171,6 @@ void new_minimun_distance_found(tsp_t_pointer tsp) {
 	}
 }
 
-
-
 static inline partition_interval_t get_next_partition_block_size(tsp_t_pointer tsp, int block_size) {
 	partition_interval_t ret;
 	ret.start = ret.end = -1;	
@@ -195,7 +193,11 @@ inline partition_interval_t get_next_partition_block(tsp_t_pointer tsp) {
 
 inline partition_interval_t get_next_partition_fss(tsp_t_pointer tsp, int alfa) {
 	MUTEX_LOCK(main_lock);
-	int block_size = (tsp->nb_partitions - next_partition) / (tsp->nb_clusters * alfa);
+	int block_size;
+	if (tsp->processed_partitions == 0)
+		block_size = (tsp->nb_partitions / (1.0 / (INITIAL_JOB_DISTRIBUTION_PERCENTAGE / 100.0)) / tsp->nb_clusters);
+	else
+		block_size = (tsp->nb_partitions - next_partition) / (tsp->nb_clusters * alfa);
 	if (block_size < 1) 
 		block_size = 1;
 	partition_interval_t ret = get_next_partition_block_size(tsp, block_size);

@@ -10,11 +10,12 @@
 #include <pthread.h>
 
 #define MAX_TOWNS		30
-extern const unsigned long long FACTORIAL_TABLE[];
 #define MIN_JOBS_THREAD 100
 #define PARTITIONS_PER_CLUSTER 20
+#define INITIAL_JOB_DISTRIBUTION_PERCENTAGE 50.0 //float!!
 #define MAX_GRID_X		100
 #define MAX_GRID_Y		100
+extern const unsigned long long FACTORIAL_TABLE[];
 
 #define CHECK_PAGE_SIZE() if (PAGE_SIZE != sysconf(_SC_PAGESIZE)) printf("WARNING: Page size is different from the compilation parameter\n")
 

@@ -1,5 +1,7 @@
 #include "job.h"
 
+#include "tsp.h"
+
 #ifdef NO_CACHE_COHERENCE //See close_queue() for details
 static int waiting_threads = 0;
 #endif
@@ -16,8 +18,8 @@ void init_queue (job_queue_t *q, unsigned long max_size, int (*repopulate_queue)
 	q->repopulate_queue_par = repopulate_queue_par;
 	reset_queue(q);
 	
-	LOG("Trying to allocate %lu bytes for the queue\n", sizeof(job_queue_node_t) * max_size);
-	q->buffer = (job_queue_node_t *) malloc(sizeof(job_queue_node_t) * max_size);
+	q->buffer = (job_queue_node_t *) malloc(sizeof(job_queue_node_t) * q->max_size);
+	LOG("Trying to allocate %lu bytes for the queue (max_size = %lu)\n", sizeof(job_queue_node_t) * q->max_size, q->max_size);
 	assert(q->buffer != NULL);
 	COND_VAR_INIT(q->cond_var);
 }
@@ -35,6 +37,7 @@ static void close_queue (job_queue_t *q) {
 
 void add_job (job_queue_t *q, job_t j) {
 	COND_VAR_MUTEX_LOCK(q->cond_var);
+	assert (q->end < q->max_size);
 	q->buffer[q->end].tsp_job.len = j.len;
 	memcpy (&q->buffer[q->end].tsp_job.path, j.path, sizeof(path_t));
 	q->end++;

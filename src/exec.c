@@ -46,5 +46,6 @@ void start_execution(tsp_t_pointer tsp) {
 }
 
 void end_execution (tsp_t_pointer tsp) {
+	LOG ("Ending TSP ID %d Partitions processed: %d\n", tsp->cluster_id, tsp->processed_partitions);
 	free_tsp(tsp);
 }

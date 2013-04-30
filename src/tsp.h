@@ -24,7 +24,8 @@ typedef struct {
 
 	int min_distance;
 	MUTEX_CREATE(mutex);
-	char PADDING4[PADDING(sizeof(int) + MUTEX_SIZE)];
+	int processed_partitions;
+	char PADDING4[PADDING(sizeof(int) * 2 + MUTEX_SIZE)];
 	job_queue_t queue;
 } tsp_t;
 

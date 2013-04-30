@@ -87,7 +87,7 @@ tsp_t_pointer init_tsp(int cluster_id, int nb_clusters, int nb_partitions, int n
 	tsp->nb_threads = nb_threads;
 	tsp->nb_partitions = nb_partitions;
 	intern_update_minimum_distance(tsp, INT_MAX);
-
+	tsp->processed_partitions = 0;
 	tsp->distance->nb_towns = nb_towns;
 	init_distance(tsp, seed);
 	total = init_max_hops(tsp);
@@ -97,7 +97,7 @@ tsp_t_pointer init_tsp(int cluster_id, int nb_clusters, int nb_partitions, int n
 		LOG("NB_TASKS %d\n", total);
 	}
 	
-	unsigned long queue_size = total / nb_clusters + total % nb_clusters;
+	unsigned long queue_size = total / nb_clusters + total % nb_clusters + nb_clusters - 1;
 	init_queue(&tsp->queue, queue_size, repopulate_queue, tsp);
 
 	return tsp;
@@ -179,7 +179,7 @@ void generate_jobs (tsp_t_pointer tsp, partition_interval_t partition_interval) 
 	int job_count = 0;
 	path_t path;	
 	path [0] = 0;
-	LOG("Task generation %d-%d starting...\n", partition_interval.start, partition_interval.end);
+	LOG("Task generation %d-%d starting (queue %p)...\n", partition_interval.start, partition_interval.end, &tsp->queue);
 	distributor (tsp, partition_interval, 1, 0, &path, &job_count);
 	LOG("Task generation for partition %d-%d complete.\n", partition_interval.start, partition_interval.end);
 }
@@ -189,6 +189,7 @@ int repopulate_queue (void *tsp_par) {
 	partition_interval_t partition_interval = get_next_partition(tsp);	
 	if (partition_interval.start < 0)
 		return 0;
+	tsp->processed_partitions += partition_interval.end - partition_interval.start + 1;
 	generate_jobs(tsp, partition_interval);
 	return 1;
 }
