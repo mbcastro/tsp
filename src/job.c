@@ -85,7 +85,7 @@ int get_job (job_queue_t *q, job_t *j) {
 
 	index = q->begin++;
 	COND_VAR_MUTEX_UNLOCK(q->cond_var);
-	memcpy(j, &q->buffer[index].tsp_job, sizeof(job_t));		
+	memcpy(j, &q->buffer[index].tsp_job, sizeof(job_t));
 	return 1;
 } 
 

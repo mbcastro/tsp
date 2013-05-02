@@ -130,7 +130,7 @@ void tsp (tsp_t_pointer tsp_par, int hops, int len, path_t *path, unsigned long 
 	if (hops == tsp_par->distance->nb_towns) {
 		if (tsp_update_minimum_distance(tsp_par, len)) {
 			new_minimun_distance_found(tsp_par);
-			LOG ("worker[%d] finds path len = %3d :", thread_id, len);
+			LOG ("Cluster %d - Worker[%d] finds path len = %3d :", tsp_par->cluster_id, thread_id, len);
 			for (i = 0; i < tsp_par->distance->nb_towns; i++)
 				LOG ("%2d ", (*path)[i]);
 			LOG ("\n");
@@ -157,7 +157,7 @@ void distributor (tsp_t_pointer tsp_par, partition_interval_t partition_interval
 		if (job_partition_id >= partition_interval.start && job_partition_id <= partition_interval.end) {
 			j.len = len;
 			for (i = 0; i < hops; i++)
-				j.path[i] = (*path)[i];			
+				j.path[i] = (*path)[i];
 			add_job (&tsp_par->queue, j);
 		}
 		(*job_index)++;
@@ -179,9 +179,9 @@ void generate_jobs (tsp_t_pointer tsp, partition_interval_t partition_interval) 
 	int job_count = 0;
 	path_t path;	
 	path [0] = 0;
-	LOG("Task generation %d-%d starting (queue %p)...\n", partition_interval.start, partition_interval.end, &tsp->queue);
+	LOG("Cluster %d - Task generation %d-%d starting (queue %p)...\n", tsp->cluster_id, partition_interval.start, partition_interval.end, &tsp->queue);
 	distributor (tsp, partition_interval, 1, 0, &path, &job_count);
-	LOG("Task generation for partition %d-%d complete.\n", partition_interval.start, partition_interval.end);
+	LOG("Cluster %d - Task generation for partition %d-%d complete.\n", tsp->cluster_id, partition_interval.start, partition_interval.end);
 }
 
 int repopulate_queue (void *tsp_par) {
@@ -230,4 +230,45 @@ inline int tsp_update_minimum_distance (tsp_t_pointer tsp, int new_distance) {
 	}
 	MUTEX_UNLOCK(tsp->mutex);
 	return min_updated;
+}
+
+
+
+static inline partition_interval_t get_next_partition_block_size(tsp_t_pointer tsp, int *next_partition, int block_size, int processed_partitions) {
+	partition_interval_t ret;
+	ret.start = ret.end = -1;	
+	if ((*next_partition) < tsp->nb_partitions)
+		ret.start = (*next_partition);
+		if ((*next_partition) + block_size - 1 < tsp->nb_partitions)
+			ret.end = (*next_partition) + block_size - 1;
+		else
+			ret.end = ret.start + tsp->nb_partitions - ret.start;
+		(*next_partition) += block_size;
+	return ret;
+}
+
+inline partition_interval_t get_next_partition_block(tsp_t_pointer tsp, int *next_partition, int processed_partitions) {	
+	partition_interval_t ret = get_next_partition_block_size(tsp, next_partition, 5, processed_partitions);	
+	return ret;
+}
+
+inline partition_interval_t get_next_partition_fss(tsp_t_pointer tsp, int *next_partition, int alfa, int processed_partitions) {	
+	int block_size;
+	block_size = (tsp->nb_partitions / (1.0 / (INITIAL_JOB_DISTRIBUTION_PERCENTAGE / 100.0)) / tsp->nb_clusters);
+	if (processed_partitions != 0) {
+		int block_size2 = (tsp->nb_partitions - (*next_partition)) / (tsp->nb_clusters * alfa);
+		block_size = (block_size2 < block_size) ? block_size2 : block_size;
+	}
+	if (block_size < 1) 
+		block_size = 1;
+	partition_interval_t ret = get_next_partition_block_size(tsp, next_partition, block_size, processed_partitions);	
+	return ret;
+}
+
+inline partition_interval_t get_next_partition_gss(tsp_t_pointer tsp, int *next_partition, int processed_partitions) {
+	return get_next_partition_fss(tsp, next_partition, 1, processed_partitions);
+}
+
+inline partition_interval_t get_next_partition_default_impl(tsp_t_pointer tsp, int *next_partition, int processed_partitions) {	
+	return get_next_partition_gss(tsp, next_partition, processed_partitions);
 }

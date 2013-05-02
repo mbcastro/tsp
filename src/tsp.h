@@ -52,5 +52,6 @@ typedef struct {
 } partition_interval_t;
 
 extern partition_interval_t get_next_partition(tsp_t_pointer tsp);
+inline partition_interval_t get_next_partition_default_impl(tsp_t_pointer tsp, int *next_partition, int processed_partitions);
 
 #endif

@@ -97,7 +97,7 @@ struct cond_var_struct {
 #endif //MT
 
 #ifdef DEBUG
-#define LOG printf
+#define LOG(...) printf(__VA_ARGS__); fflush(stdout)
 #else
 #define LOG(...) 
 #endif //DEBUG
@@ -127,7 +127,5 @@ inline unsigned int simple_rng_next(struct rand_state_struct *current_state);
 #endif //DEF_RAND
 
 int* par_parse(const char *str);
-
-
 
 #endif //__DEFS_H

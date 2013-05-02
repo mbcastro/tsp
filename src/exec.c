@@ -1,6 +1,6 @@
 #include "exec.h"
 
- void do_work (tsp_t *tsp) {
+ void do_work (tsp_t_pointer tsp) {
 #ifdef MT
 	unsigned long i;
 	pthread_t *tids = NULL;
@@ -41,7 +41,7 @@ tsp_t_pointer init_execution(int cluster_id, int nb_clusters, int nb_partitions,
 	return ret;
 }
 
-void start_execution(tsp_t_pointer tsp) {	
+void start_execution(tsp_t_pointer tsp) {
 	do_work(tsp);
 }
 
