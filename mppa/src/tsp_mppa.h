@@ -3,6 +3,8 @@
 
 #include <mppaipc.h>
 #include <inttypes.h>
+
+#include "common_main.h"
 #include "exec.h"
 
 //to
@@ -24,10 +26,14 @@ typedef enum {
 	BARRIER_SLAVE
 } barrier_mode_t;
 
-typedef struct  {
+typedef struct {
 	int file_descriptor;
 	mppa_aiocb_t portal;
 } portal_t;
+
+typedef struct {
+	int file_descriptor;
+} rqueue_t;
 
 typedef struct {
 	int sync_fd_master;
@@ -44,19 +50,26 @@ typedef struct {
 
 void set_path_name(char *path, char *template_path, int rx, int tag);
 
-portal_t *create_read_portal (char *path, void* buffer, unsigned long buffer_size, int trigger, void (*function)(mppa_sigval_t));
-portal_t *create_write_portal (char *path, int min_rank, int max_rank, int includes_ionode);
-void write_portal (portal_t *portal, void *buffer, int buffer_size, int offset);
-void close_portal (portal_t *portal);
+portal_t *mppa_create_read_portal (char *path, void* buffer, unsigned long buffer_size, int trigger, void (*function)(mppa_sigval_t));
+portal_t *mppa_create_write_portal (char *path, int min_rank, int max_rank, int includes_ionode);
+void mppa_write_portal (portal_t *portal, void *buffer, int buffer_size, int offset);
+void mppa_close_portal (portal_t *portal);
 
-broadcast_t *create_broadcast (int clusters, char *path_name, void *buffer, int buffer_size, int includes_ionode, void (*callback_function)(mppa_sigval_t));
-void broadcast (broadcast_t *broadcast, void * value, int size);
-void close_broadcast (broadcast_t *broadcast);
+rqueue_t *mppa_create_read_rqueue (int message_size, int rx_id, int rx_tag, char *tx_ids, int tx_tag);
+void mppa_init_read_rqueue(rqueue_t *rqueue, int credit);
+rqueue_t *mppa_create_write_rqueue (int message_size, int rx_id, int rx_tag, char *tx_ids, int tx_tag);
+void mppa_read_rqueue (rqueue_t *rqueue, void *buffer, int buffer_size);
+void mppa_write_rqueue (rqueue_t *rqueue, void *buffer, int buffer_size);
+void mppa_close_rqueue(rqueue_t *rqueue);
 
-barrier_t *create_master_barrier (char *path_master, char *path_slave, int clusters);
-barrier_t *create_slave_barrier (char *path_master, char *path_slave);
-void barrier_wait (barrier_t *barrier);
-void close_barrier (barrier_t *barrier);
+broadcast_t *mppa_create_broadcast (int clusters, char *path_name, void *buffer, int buffer_size, int includes_ionode, void (*callback_function)(mppa_sigval_t));
+void mppa_broadcast (broadcast_t *broadcast, void * value, int size);
+void mppa_close_broadcast (broadcast_t *broadcast);
+
+barrier_t *mppa_create_master_barrier (char *path_master, char *path_slave, int clusters);
+barrier_t *mppa_create_slave_barrier (char *path_master, char *path_slave);
+void mppa_barrier_wait (barrier_t *barrier);
+void mppa_close_barrier (barrier_t *barrier);
 
 void mppa_init_time(void);
 inline uint64_t mppa_get_time(void);

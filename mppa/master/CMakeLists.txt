@@ -46,7 +46,7 @@ add_executable(tsp_lock_mppa_master ${source_files})
 set_target_properties(tsp_lock_mppa_master PROPERTIES COMPILE_FLAGS "-DMT")
 
 # cas-based version
-add_executable(tsp_cas_mppa_master ${source_files})
-set_target_properties(tsp_cas_mppa_master PROPERTIES COMPILE_FLAGS "-DMT -DCAS")
+#add_executable(tsp_cas_mppa_master ${source_files})
+#set_target_properties(tsp_cas_mppa_master PROPERTIES COMPILE_FLAGS "-DMT -DCAS")
 
 

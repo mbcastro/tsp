@@ -46,7 +46,7 @@ add_executable(tsp_lock_mppa_slave ${source_files})
 set_target_properties(tsp_lock_mppa_slave PROPERTIES COMPILE_FLAGS "-DMT")
 
 # cas-based version
-add_executable(tsp_cas_mppa_slave ${source_files})
-set_target_properties(tsp_cas_mppa_slave PROPERTIES COMPILE_FLAGS "-DMT -DCAS")
+#add_executable(tsp_cas_mppa_slave ${source_files})
+#set_target_properties(tsp_cas_mppa_slave PROPERTIES COMPILE_FLAGS "-DMT -DCAS")
 
 

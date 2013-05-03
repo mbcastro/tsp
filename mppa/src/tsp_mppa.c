@@ -8,7 +8,7 @@ void set_path_name(char *path, char *template_path, int rx, int tag) {
  * PORTAL COMMUNICATION
  **************************************/
 
-portal_t *create_read_portal (char *path, void* buffer, unsigned long buffer_size, int trigger, void (*function)(mppa_sigval_t)) {
+portal_t *mppa_create_read_portal (char *path, void* buffer, unsigned long buffer_size, int trigger, void (*function)(mppa_sigval_t)) {
 	portal_t *ret = (portal_t*) malloc (sizeof(portal_t));
 	int status;
 	ret->file_descriptor = mppa_open(path, O_RDONLY);
@@ -29,7 +29,7 @@ portal_t *create_read_portal (char *path, void* buffer, unsigned long buffer_siz
 	return ret;
 }
 
-portal_t *create_write_portal (char *path, int min_rank, int max_rank, int includes_ionode) {	
+portal_t *mppa_create_write_portal (char *path, int min_rank, int max_rank, int includes_ionode) {	
 	portal_t *ret = (portal_t*) malloc (sizeof(portal_t));
 	ret->file_descriptor = mppa_open(path, O_WRONLY);
 	assert(ret->file_descriptor != -1);
@@ -53,22 +53,71 @@ portal_t *create_write_portal (char *path, int min_rank, int max_rank, int inclu
    	return ret;
 }
 
-void close_portal (portal_t *portal) {
+void mppa_close_portal (portal_t *portal) {
 	assert(mppa_close (portal->file_descriptor) != -1);
 	free (portal);
 }
 
-void write_portal (portal_t *portal, void *buffer, int buffer_size, int offset) {
+void mppa_write_portal (portal_t *portal, void *buffer, int buffer_size, int offset) {
 	int status;
 	status = mppa_pwrite(portal->file_descriptor, buffer, buffer_size, offset);
 	assert(status == buffer_size);
+}
+
+
+/**************************************
+ * RQUEUE COMMUNICATION
+ **************************************/
+
+rqueue_t *mppa_create_read_rqueue (int message_size, int rx_id, int rx_tag, char *tx_ids, int tx_tag) {
+	rqueue_t *ret = (rqueue_t *) malloc (sizeof(rqueue_t));
+	char path_name[256];
+	
+	sprintf(path_name, "/mppa/queue.%d/%d:%d/%s:%d", message_size, rx_id, rx_tag, tx_ids, tx_tag);
+	ret->file_descriptor = mppa_open(path_name, O_RDONLY);
+	assert(ret->file_descriptor != -1);
+
+	return ret;
+}
+
+void mppa_init_read_rqueue(rqueue_t *rqueue, int credit) {
+	int status = mppa_ioctl(rqueue->file_descriptor, MPPA_RX_SET_CREDITS, credit);
+	assert(status == 0);
+}
+
+rqueue_t *mppa_create_write_rqueue (int message_size, int rx_id, int rx_tag, char *tx_ids, int tx_tag) {
+	rqueue_t *ret = (rqueue_t *) malloc (sizeof(rqueue_t));
+	char path_name[256];
+	
+	sprintf(path_name, "/mppa/queue.%d/%d:%d/%s:%d", message_size, rx_id, rx_tag, tx_ids, tx_tag);
+	ret->file_descriptor = mppa_open(path_name, O_WRONLY);
+	assert(ret->file_descriptor != -1);
+
+	return ret;
+}
+
+void mppa_read_rqueue (rqueue_t *rqueue, void *buffer, int buffer_size) {
+	int status;
+	status = mppa_read(rqueue->file_descriptor, buffer, buffer_size);
+	assert(status == buffer_size);
+}
+
+void mppa_write_rqueue (rqueue_t *rqueue, void *buffer, int buffer_size) {
+	int status;
+	status = mppa_write(rqueue->file_descriptor, buffer, buffer_size);
+	assert(status == buffer_size);
+}
+
+void mppa_close_rqueue(rqueue_t *rqueue) {
+	assert(mppa_close (rqueue->file_descriptor) != -1);
+	free (rqueue);
 }
 
 /**************************************
  * Broadcast
  **************************************/
 
-broadcast_t *create_broadcast (int clusters, char *path_name, void *buffer, int buffer_size, int includes_ionode, void (*callback_function)(mppa_sigval_t)) {
+broadcast_t *mppa_create_broadcast (int clusters, char *path_name, void *buffer, int buffer_size, int includes_ionode, void (*callback_function)(mppa_sigval_t)) {
 	int i;
 	char filled_path[256];
 	broadcast_t *ret = (broadcast_t *) malloc(sizeof(broadcast_t));
@@ -80,23 +129,23 @@ broadcast_t *create_broadcast (int clusters, char *path_name, void *buffer, int 
 	for( i = 0; i < clusters; i++) {
 		set_path_name(filled_path, path_name, i, i + 40);
 		if (i == rank)
-			ret->portals[i] = create_read_portal (filled_path, buffer, buffer_size, 0, callback_function);
+			ret->portals[i] = mppa_create_read_portal (filled_path, buffer, buffer_size, 0, callback_function);
 		else		
-			ret->portals[i] = create_write_portal(filled_path, i, i, FALSE);
+			ret->portals[i] = mppa_create_write_portal(filled_path, i, i, FALSE);
 	}
 
 	if (includes_ionode) {
 		set_path_name(filled_path, path_name, IO_NODE_RANK, clusters + 40);
 		if (rank == IO_NODE_RANK)
-			ret->portals[clusters] = create_read_portal (filled_path, buffer, buffer_size, 0, callback_function);
+			ret->portals[clusters] = mppa_create_read_portal (filled_path, buffer, buffer_size, 0, callback_function);
 		else
-			ret->portals[clusters] = create_write_portal(filled_path, IO_NODE_RANK, IO_NODE_RANK, FALSE);
+			ret->portals[clusters] = mppa_create_write_portal(filled_path, IO_NODE_RANK, IO_NODE_RANK, FALSE);
 	}
 
 	return ret;
 }
 
-void broadcast (broadcast_t *broadcast, void *value, int size) {
+void mppa_broadcast (broadcast_t *broadcast, void *value, int size) {
 	int i;
 	int rank = __k1_get_cluster_id();
 	int offset = size * ((rank == IO_NODE_RANK) ? broadcast->clusters : rank);
@@ -104,30 +153,30 @@ void broadcast (broadcast_t *broadcast, void *value, int size) {
 	for (i = 0; i < broadcast->clusters; i++) {
 		if (i == rank)
 			continue;
-		write_portal(broadcast->portals[i], value, size, offset);
+		mppa_write_portal(broadcast->portals[i], value, size, offset);
 	}
 
 	if (broadcast->includes_ionode && rank != IO_NODE_RANK) {
-		write_portal(broadcast->portals[broadcast->clusters], value, size, offset);	
+		mppa_write_portal(broadcast->portals[broadcast->clusters], value, size, offset);	
 	}
 	
 }
 
-void close_broadcast (broadcast_t *broadcast) {
+void mppa_close_broadcast (broadcast_t *broadcast) {
 	int i;
 	for (i = 0; i < broadcast->clusters; ++i)
-		close_portal(broadcast->portals[i]);
+		mppa_close_portal(broadcast->portals[i]);
 	if (broadcast->includes_ionode)
-		close_portal(broadcast->portals[broadcast->clusters]);
+		mppa_close_portal(broadcast->portals[broadcast->clusters]);
 	free (broadcast->portals);
 	free (broadcast);
 }
 
 /**************************************
- * BARRIER
+ * BARRIER - INTERNAL
  **************************************/
 
-barrier_t *create_master_barrier (char *path_master, char *path_slave, int clusters) {
+barrier_t *mppa_create_master_barrier (char *path_master, char *path_slave, int clusters) {
 	int status, i;
 	int ranks[clusters];
 	long long match;
@@ -155,7 +204,7 @@ barrier_t *create_master_barrier (char *path_master, char *path_slave, int clust
 	return ret;
 }
 
-barrier_t *create_slave_barrier (char *path_master, char *path_slave) {
+barrier_t *mppa_create_slave_barrier (char *path_master, char *path_slave) {
 	int status;
 
 	barrier_t *ret = (barrier_t*) malloc (sizeof (barrier_t));
@@ -174,7 +223,7 @@ barrier_t *create_slave_barrier (char *path_master, char *path_slave) {
 	return ret;
 }
 
-void barrier_wait(barrier_t *barrier) {
+void mppa_barrier_wait(barrier_t *barrier) {
 	int status;
 	long long dummy;
 
@@ -198,10 +247,19 @@ void barrier_wait(barrier_t *barrier) {
 	}
 }
 
-void close_barrier (barrier_t *barrier) {
+void mppa_close_barrier (barrier_t *barrier) {
 	assert(mppa_close(barrier->sync_fd_master) != -1);
 	assert(mppa_close(barrier->sync_fd_slave) != -1);
 	free(barrier);
+}
+
+/**************************************
+ * BARRIER - EXTERNAL
+ **************************************/
+
+void wait_barrier (barrier_par_t barrier_par) {
+	barrier_t *barrier = (barrier_t*)barrier_par.void_t;
+	mppa_barrier_wait(barrier); 
 }
 
 /**************************************

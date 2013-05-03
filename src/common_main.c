@@ -1,57 +1,19 @@
 #define _GNU_SOURCE             
 
 #include "common_main.h"
-#include "cpu_affinity.h"
 
-struct execution_parameters {
-	int cluster;
-	int nb_clusters;
-	int nb_partitions;
-	int nb_threads;
-	int nb_towns;
-	int seed;
-	tsp_t_pointer *tsp;
-};
-
-static void *spawn_worker(void* params) {
+void *spawn_worker(void* params) {
 	struct execution_parameters *p = (struct execution_parameters *)params;
 	(*p->tsp) = init_execution(p->cluster, p->nb_clusters, p->nb_partitions, p->nb_threads, p->nb_towns, p->seed);
 	
-	wait_barrier (p->nb_clusters);
+	wait_barrier (p->barrier);
 	start_execution(*p->tsp);
-	wait_barrier (p->nb_clusters);
-	
+	wait_barrier (p->barrier);
 	end_execution(*p->tsp);
 
 	free(params);
 	return NULL;
 }
-
-pthread_t *spawn (tsp_t_pointer *tsp, int cluster_id, int nb_clusters, int nb_partitions, int nb_threads, int nb_towns, int seed, char* machine) {
-	pthread_t *tid = (pthread_t *)malloc (sizeof(pthread_t));
-	struct execution_parameters *params = (struct execution_parameters*) malloc (sizeof(struct execution_parameters));
-	params->cluster = cluster_id;
-	params->nb_clusters = nb_clusters;
-	params->nb_partitions = nb_partitions;
-	params->nb_threads = nb_threads;
-	params->nb_towns = nb_towns;
-	params->seed = seed;
-	params->tsp = tsp;
-
-	int status = pthread_create (tid, NULL, spawn_worker, params);
-	assert (status == 0);
-
-	if (machine) {
-		char **machine_sched = get_machine_sched(machine);
-		cpu_set_t *cpu_set = mask_for_partition(cluster_id, machine_sched);
-		status = pthread_setaffinity_np (*tid, sizeof(cpu_set_t), cpu_set);
-		assert (status == 0);
-		free(cpu_set);
-	}
-
-	return tid;	
-}
-
 
 struct main_pars init_main_pars (int argc, char **argv) {
 	struct main_pars ret;
@@ -98,5 +60,10 @@ void run_main (struct main_pars pars) {
 		}
 		town++;
 	}
+}
 
+void free_main (struct main_pars pars) {
+	free(pars.nb_towns);
+	free(pars.nb_threads);
+	free(pars.nb_clusters);
 }

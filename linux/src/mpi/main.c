@@ -7,12 +7,39 @@
 #include <errno.h>
 #include <mpi.h>
 
+#include "cpu_affinity.h"
 #include "common_main.h"
 
 static tsp_t_pointer tsp;
 
 static int next_partition;
 MUTEX_CREATE(main_lock, static);
+
+pthread_t *spawn (tsp_t_pointer *tsp, int cluster_id, int nb_clusters, int nb_partitions, int nb_threads, int nb_towns, int seed, char* machine) {
+	pthread_t *tid = (pthread_t *)malloc (sizeof(pthread_t));
+	struct execution_parameters *params = (struct execution_parameters*) malloc (sizeof(struct execution_parameters));
+	params->cluster = cluster_id;
+	params->nb_clusters = nb_clusters;
+	params->nb_partitions = nb_partitions;
+	params->nb_threads = nb_threads;
+	params->nb_towns = nb_towns;
+	params->seed = seed;
+	params->tsp = tsp;
+	params->barrier_par = nb_clusters;
+
+	int status = pthread_create (tid, NULL, spawn_worker, params);
+	assert (status == 0);
+
+	if (machine) {
+		char **machine_sched = get_machine_sched(machine);
+		cpu_set_t *cpu_set = mask_for_partition(cluster_id, machine_sched);
+		status = pthread_setaffinity_np (*tid, sizeof(cpu_set_t), cpu_set);
+		assert (status == 0);
+		free(cpu_set);
+	}
+
+	return tid;	
+}
 
 
 int main (int argc, char **argv) {
