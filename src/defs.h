@@ -9,7 +9,7 @@
 #include <limits.h>
 #include <pthread.h>
 
-#define MAX_TOWNS		30
+#define MAX_TOWNS		20
 #define MIN_JOBS_THREAD 100
 #define PARTITIONS_PER_CLUSTER 20
 #define INITIAL_JOB_DISTRIBUTION_PERCENTAGE 50.0 //float!!
