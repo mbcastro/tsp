@@ -114,7 +114,7 @@ void run_tsp (int nb_threads, int nb_towns, int seed, int nb_clusters, char* mac
 	free(tsps);
 
     unsigned long exec_time = diff_time(start, get_time());
-	printf ("%lu\t%d\t%d\t%d\t%d\t%d\t%d", 
+	printf ("%15lu\t%5d\t%2d\t%2d\t%5d\t%2d\t%8d", 
 		exec_time, min_distance,nb_threads, nb_towns, seed, nb_clusters, nb_partitions);
 }
 

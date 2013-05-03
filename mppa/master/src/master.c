@@ -46,7 +46,7 @@ void run_tsp (int nb_threads, int nb_towns, int seed, int nb_clusters, char* mac
 	barrier_t *sync_barrier = mppa_create_master_barrier (BARRIER_SYNC_MASTER, BARRIER_SYNC_SLAVE, nb_clusters);
 	barrier_par_t barrier;
 	barrier.void_t = sync_barrier;
-	
+
 	broad = mppa_create_broadcast (nb_clusters, BROADCAST_MASK, comm_buffer, comm_buffer_size, TRUE, callback_master);
 
 	rqueue_t *rqueue_partition_request = mppa_create_read_rqueue(2 * sizeof(int), 128, 70, "[0..15]", 71);
@@ -122,7 +122,7 @@ void run_tsp (int nb_threads, int nb_towns, int seed, int nb_clusters, char* mac
 	free(argv);
 
    	uint64_t exec_time = mppa_diff_time(start, mppa_get_time());
-   	printf ("%llu\t%d\t%d\t%d\t%d\t%d\t%d\n", 
+   	printf ("%15llu\t%5d\t%2d\t%2d\t%5d\t%2d\t%8d\n", 
 		exec_time, min, nb_threads, nb_towns, seed, nb_clusters, nb_partitions);
 
 }
