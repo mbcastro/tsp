@@ -51,7 +51,7 @@ void run_tsp (int nb_threads, int nb_towns, int seed, int nb_clusters, char* mac
 	// SOLUTION FOR ioctl along with rqueue BUG
  	// ------------------------------------------ 
 	LOG("Cluster starting (%d clusters).\n", nb_clusters);
-	tsp_instance = init_execution(cluster_id, nb_clusters, nb_clusters * PARTITIONS_PER_CLUSTER, nb_threads, nb_towns, seed);
+	tsp_instance = init_execution(cluster_id, nb_clusters, get_number_of_partitions(nb_clusters), nb_threads, nb_towns, seed);
 	wait_barrier (barrier);
 	mppa_init_read_rqueue(rqueue_partition_response, 1);
 	start_execution(tsp_instance);

@@ -147,7 +147,7 @@ void *spawn_comm_thread (void *params) {
 void run_tsp (int nb_threads, int nb_towns, int seed, int nb_clusters, char* machine) {
 
 	unsigned long start = get_time();
-	int nb_partitions = nb_clusters * PARTITIONS_PER_CLUSTER;
+	int nb_partitions = get_number_of_partitions(nb_clusters);
 
 	next_partition = 0;
 	

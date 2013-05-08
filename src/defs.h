@@ -11,11 +11,19 @@
 
 #define MAX_TOWNS		20
 #define MIN_JOBS_THREAD 100
-#define PARTITIONS_PER_CLUSTER 20
+#define MIN_PARTITIONS_PER_CLUSTER 20
 #define INITIAL_JOB_DISTRIBUTION_PERCENTAGE 50.0 //float!!
 #define MAX_GRID_X		100
 #define MAX_GRID_Y		100
 extern const unsigned long long FACTORIAL_TABLE[];
+
+
+unsigned int get_number_of_partitions (int clusters);
+
+
+/*
+ * MEMORY ALIGNEMENT ROUTINES
+ */
 
 #define CHECK_PAGE_SIZE() if (PAGE_SIZE != sysconf(_SC_PAGESIZE)) printf("WARNING: Page size is different from the compilation parameter\n")
 
@@ -26,6 +34,11 @@ extern const unsigned long long FACTORIAL_TABLE[];
  * variable declaration or posix_memalign for memory allocation
  */
 #define PADDING(struct_size) PAGE_SIZE - struct_size + (struct_size / PAGE_SIZE * PAGE_SIZE)
+
+
+/*
+ * LOCKING PRIMITIVES
+ */
 
 #ifdef MT 
 
@@ -96,12 +109,23 @@ struct cond_var_struct {
 
 #endif //MT
 
+
+
+/*
+ * DEBUGGING AND TRACING
+ */
+
 #ifdef DEBUG
 #define LOG(...) printf(__VA_ARGS__); fflush(stdout)
 #else
 #define LOG(...) 
 #endif //DEBUG
 
+
+
+/*
+ * RANDOM NUMBER GENERATOR
+ */
 
 #ifdef DEF_RAND
 
@@ -125,6 +149,12 @@ inline unsigned int simple_rng_next(struct rand_state_struct *current_state);
 #define RAND_NEXT(state) simple_rng_next(&state)
 
 #endif //DEF_RAND
+
+
+
+/*
+ * ARGUMENT PARSING
+ */
 
 int* par_parse(const char *str);
 

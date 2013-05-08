@@ -28,7 +28,7 @@ void run_tsp (int nb_threads, int nb_towns, int seed, int nb_clusters, char* mac
 
 	int rank, status = 0, i;
 	int pid;
-	int nb_partitions = nb_clusters * PARTITIONS_PER_CLUSTER;
+	int nb_partitions = get_number_of_partitions(nb_clusters);
 	int finished_clusters = 0;
 	int next_partition = 0;
 

@@ -92,7 +92,7 @@ void run_tsp (int nb_threads, int nb_towns, int seed, int nb_clusters, char* mac
 	int i;
 
 	unsigned long start = get_time();
-	int nb_partitions = nb_clusters * PARTITIONS_PER_CLUSTER;
+	int nb_partitions = get_number_of_partitions(nb_clusters);
 	LOG ("nb_clusters = %3d nb_partitions = %3d nb_threads = %3d nb_towns = %3d seed = %d \n", 
 		nb_clusters, nb_partitions, nb_threads, nb_towns, seed);
 
