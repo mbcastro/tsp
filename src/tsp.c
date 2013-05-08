@@ -1,6 +1,11 @@
 #include <math.h>
 
 #include "tsp.h"
+#include "timer.h"
+
+#ifdef TRACE_ENABLED
+static __thread int thread_id;
+#endif
 
 int repopulate_queue (void *tsp_par);
 
@@ -186,6 +191,11 @@ void generate_jobs (tsp_t_pointer tsp, partition_interval_t partition_interval) 
 
 int repopulate_queue (void *tsp_par) {
 	tsp_t_pointer tsp = (tsp_t_pointer)tsp_par;
+
+#ifdef TRACE_ENABLED	
+	TRACE(get_time(), tsp->cluster_id, thread_id, GENERATING_TASKS);
+#endif
+
 	partition_interval_t partition_interval = get_next_partition(tsp);	
 	if (partition_interval.start < 0)
 		return 0;
@@ -197,18 +207,29 @@ int repopulate_queue (void *tsp_par) {
 void *worker (void *pars) {
 	tsp_thread_par_t *p = (tsp_thread_par_t *)pars;
 
+#ifdef TRACE_ENABLED
+	thread_id = p->thread_id;
+#endif	
+
 	int jobcount = 0;
 	job_t job;
 	unsigned long cuts = 0;
 	unsigned long long path_cuts = 0;
+	
 
-	while (get_job (&p->tsp->queue, &job)) {
+	while (1) {
+		TRACE(get_time(), p->tsp->cluster_id, p->thread_id, WAITING_FOR_TASKS);
+		int found = get_job (&p->tsp->queue, &job);
+		if (!found) break;
+		TRACE(get_time(), p->tsp->cluster_id, p->thread_id, PROCESSING_TASKS);
 		jobcount++;
 		tsp (p->tsp, p->tsp->max_hops, job.len, &job.path, &cuts, &path_cuts, p->thread_id);
 	}
 
+	TRACE(get_time(), p->tsp->cluster_id, p->thread_id, ENDING_THREAD);
 	LOG ("Worker [%3d,%3d] terminates, %4d jobs done with %16lu cuts %20llu path cuts %10g cut efficiency.\n", 
 		p->tsp->cluster_id, p->thread_id, jobcount, cuts, path_cuts, 1.0 * path_cuts / cuts);
+
 	free(pars);
 	return NULL;
 }

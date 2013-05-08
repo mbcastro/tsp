@@ -25,11 +25,14 @@ int main (int argc, char **argv) {
 	struct main_pars pars = init_main_pars(argc, argv);
 	
 	COND_VAR_INIT(sync_barrier);
-	MUTEX_INIT(main_lock);	
+	MUTEX_INIT(main_lock);
+	TRACE_INIT();
 	
 	run_main(pars);	
 	
 	free_main(pars);
+
+	TRACE_END();
 
 	return 0;
 }
@@ -63,6 +66,7 @@ void wait_barrier (barrier_par_t barrier_par) {
 
 
 pthread_t *spawn (tsp_t_pointer *tsp, int cluster_id, int nb_clusters, int nb_partitions, int nb_threads, int nb_towns, int seed, char* machine) {
+
 	pthread_t *tid = (pthread_t *)malloc (sizeof(pthread_t));
 	struct execution_parameters *params = (struct execution_parameters*) malloc (sizeof(struct execution_parameters));
 	params->cluster = cluster_id;
@@ -92,6 +96,9 @@ void run_tsp (int nb_threads, int nb_towns, int seed, int nb_clusters, char* mac
 	int i;
 
 	unsigned long start = get_time();
+	
+	TRACE(start, -1, -1, STARTING_EXECUTION);
+
 	int nb_partitions = get_number_of_partitions(nb_clusters);
 	LOG ("nb_clusters = %3d nb_partitions = %3d nb_threads = %3d nb_towns = %3d seed = %d \n", 
 		nb_clusters, nb_partitions, nb_threads, nb_towns, seed);
@@ -113,7 +120,9 @@ void run_tsp (int nb_threads, int nb_towns, int seed, int nb_clusters, char* mac
 	free (tids);
 	free(tsps);
 
-    unsigned long exec_time = diff_time(start, get_time());
+	unsigned long end = get_time();
+    unsigned long exec_time = diff_time(start, end);
+    TRACE(end, -1, -1, ENDING_EXECUTION);
 	printf ("%15lu\t%5d\t%2d\t%2d\t%5d\t%2d\t%8d", 
 		exec_time, min_distance,nb_threads, nb_towns, seed, nb_clusters, nb_partitions);
 }

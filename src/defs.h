@@ -11,7 +11,7 @@
 
 #define MAX_TOWNS		20
 #define MIN_JOBS_THREAD 100
-#define MIN_PARTITIONS_PER_CLUSTER 20
+#define MIN_PARTITIONS_PER_CLUSTER 30
 #define INITIAL_JOB_DISTRIBUTION_PERCENTAGE 50.0 //float!!
 #define MAX_GRID_X		100
 #define MAX_GRID_Y		100
@@ -121,6 +121,33 @@ struct cond_var_struct {
 #define LOG(...) 
 #endif //DEBUG
 
+
+enum {
+	STARTING_EXECUTION,
+	WAITING_FIRST_BARRIER, RELEASED_FIRST_BARRIER,
+	GENERATING_TASKS,
+	WAITING_FOR_TASKS,
+	PROCESSING_TASKS,
+	ENDING_THREAD,
+	WAITING_SECOND_BARRIER, RELEASED_SECOND_BARRIER,
+	ENDING_EXECUTION
+}; //Tracing states
+
+
+
+#ifdef TRACE_ENABLED
+
+#define TRACE_INIT(...)
+#define TRACE(when, cluster_id, thread_id, state) printf("%lu\t%d\t%d\t%d\n", when, cluster_id, thread_id, state) 
+#define TRACE_END(...) fflush(stdout)
+
+#else
+
+#define TRACE_INIT(...)
+#define TRACE(...) 
+#define TRACE_END(...)
+
+#endif //TRACE_ENABLED
 
 
 /*

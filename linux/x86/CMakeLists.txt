@@ -7,7 +7,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/linux/x86/bin)
 
 # source files
 file(GLOB source_files_pthreads "${CMAKE_BINARY_DIR}/src/*" "${CMAKE_BINARY_DIR}/linux/src/*" "${CMAKE_BINARY_DIR}/linux/src/pthreads/*")
-
+file(GLOB source_files_trace "${CMAKE_BINARY_DIR}/linux/src/trace/*")
 # file(GLOB source_files_mpi "${CMAKE_BINARY_DIR}/src/*" "${CMAKE_BINARY_DIR}/linux/src/*" "${CMAKE_BINARY_DIR}/linux/src/mpi/*")
 
 include_directories(${CMAKE_BINARY_DIR}/linux/src/ ${CMAKE_BINARY_DIR}/src )
@@ -35,12 +35,22 @@ if (SRAND)
 	set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DDEF_RAND")
 endif(SRAND)
 
+#Should tracing be enabled?
+if (TRACE_ENABLED) 
+	set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DTRACE_ENABLED")
+endif(TRACE_ENABLED)
+
+
 # sequential version
 add_executable(tsp_seq ${source_files_pthreads})
 
 # lock-based version
 add_executable(tsp_lock ${source_files_pthreads})
 set_target_properties(tsp_lock PROPERTIES COMPILE_FLAGS "-DMT")
+
+# trace converter
+add_executable(trace_converter ${source_files_trace})
+TARGET_LINK_LIBRARIES(trace_converter poti)
 
 # mpi lock-based version
 # add_executable(tsp_mpi ${source_files_mpi})

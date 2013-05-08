@@ -75,6 +75,10 @@ unsigned int get_number_of_partitions (int clusters) {
 
 
 
+/*
+ * RANDOM NUMBER GENERATOR
+ */
+
 const static unsigned int simple_rng_s_mw_default = 521288629;
 const static unsigned int simple_rng_s_mz_default = 362436069;
 
@@ -104,6 +108,11 @@ inline unsigned int simple_rng_next(struct rand_state_struct *current_state) {
 	return u;
 }
 
+
+
+/*
+ * ARGUMENT PARSING
+ */
 
 static const char *nexttoken(const char *q,  int sep) {
 	if (q)

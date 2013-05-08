@@ -6,9 +6,17 @@ void *spawn_worker(void* params) {
 	struct execution_parameters *p = (struct execution_parameters *)params;
 	(*p->tsp) = init_execution(p->cluster, p->nb_clusters, p->nb_partitions, p->nb_threads, p->nb_towns, p->seed);
 	
+	TRACE (get_time(), p->cluster, -1, WAITING_FIRST_BARRIER);
 	wait_barrier (p->barrier);
+	TRACE (get_time(), p->cluster, -1, RELEASED_FIRST_BARRIER);
+
+
 	start_execution(*p->tsp);
+	
+	TRACE (get_time(), p->cluster, -1, WAITING_SECOND_BARRIER);
 	wait_barrier (p->barrier);
+	TRACE (get_time(), p->cluster, -1, RELEASED_SECOND_BARRIER);
+
 	end_execution(*p->tsp);
 
 	free(params);
