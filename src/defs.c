@@ -24,7 +24,7 @@ const unsigned long long FACTORIAL_TABLE[] = {
 /*20*/ 0x21c3677c82b40000
 };
 
-
+#ifdef PRIME_NUMBER_OF_PARTITIONS
 static const unsigned int PRIME_NUMBER_TABLE[] = {		
       2,    3,    5,    7,   11,   13,   17,   19,   23,   29, 
      31,   37,   41,   43,   47,   53,   59,   61,   67,   71, 
@@ -62,15 +62,20 @@ static const unsigned int PRIME_NUMBER_TABLE[] = {
    2221, 2237, 2239, 2243, 2251, 2267, 2269, 2273, 2281, 2287, 
    2293, 2297, 2309, 2311, 2333, 2339, 2341, 2347, 2351, 2357
 };
+#endif
 
 unsigned int get_number_of_partitions (int clusters) {
 	unsigned int min = clusters * MIN_PARTITIONS_PER_CLUSTER;
+#ifdef PRIME_NUMBER_OF_PARTITIONS
 	int i = 0;
 	while (PRIME_NUMBER_TABLE[i] < min) {
 		i++;
 		assert (i < sizeof(PRIME_NUMBER_TABLE) / sizeof(int));
 	}
 	return PRIME_NUMBER_TABLE[i];
+#else
+	return min;
+#endif	
 }
 
 
