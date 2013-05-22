@@ -22,6 +22,7 @@ void write_header() {
 	poti_DefineEntityValue("g", "THREAD_STATE", "GENERATING_TASKS",		"1.0 1.0 0.0");
 	poti_DefineEntityValue("w", "THREAD_STATE", "WAITING_FOR_TASKS",	"1.0 0.2 0.0");
 	poti_DefineEntityValue("p", "THREAD_STATE", "PROCESSING_TASKS",		"0.0 0.0 1.0");
+	poti_DefineEntityValue("d", "THREAD_STATE", "DONE",					"0.0 1.0 0.0");
 }
 
 void create_containers(int nb_clusters, int nb_threads) {
@@ -114,6 +115,13 @@ int main (int argc, char **argv) {
 				poti_SetState (new_when, thread, "THREAD_STATE", "p");
 				end = new_when;
 				break;
+			case STARTING_EXECUTION:
+				end = new_when;
+				break;
+			case ENDING_EXECUTION:
+				poti_SetState (new_when, thread, "THREAD_STATE", "d");
+				end = new_when;
+				break;
 			case WAITING_FIRST_BARRIER:
 			case WAITING_SECOND_BARRIER:
 				poti_SetState (new_when, cluster, "THREAD_STATE", "b");
@@ -122,12 +130,6 @@ int main (int argc, char **argv) {
 			case RELEASED_FIRST_BARRIER:
 			case RELEASED_SECOND_BARRIER:
 				poti_SetState (new_when, cluster, "THREAD_STATE", "e");
-				end = new_when;
-				break;
-			case STARTING_EXECUTION:
-				end = new_when;
-				break;
-			case ENDING_EXECUTION:
 				end = new_when;
 				break;
 			default:
