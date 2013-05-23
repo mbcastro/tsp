@@ -95,7 +95,7 @@ pthread_t *spawn (tsp_t_pointer *tsp, int cluster_id, int nb_clusters, int nb_pa
 void run_tsp (int nb_threads, int nb_towns, int seed, int nb_clusters, char* machine) {
 	int i;
 
-	unsigned long start = get_time();
+	uint64_t start = get_time();
 	
 	TRACE(start, -1, -1, STARTING_EXECUTION);
 
@@ -120,8 +120,8 @@ void run_tsp (int nb_threads, int nb_towns, int seed, int nb_clusters, char* mac
 	free (tids);
 	free(tsps);
 
-	unsigned long end = get_time();
-    unsigned long exec_time = diff_time(start, end);
+	uint64_t end = get_time();
+    uint64_t exec_time = diff_time(start, end);
     TRACE(end, -1, -1, ENDING_EXECUTION);
 	printf ("%15lu\t%5d\t%2d\t%2d\t%5d\t%2d\t%8d", 
 		exec_time, min_distance,nb_threads, nb_towns, seed, nb_clusters, nb_partitions);
