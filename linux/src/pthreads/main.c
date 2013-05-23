@@ -5,6 +5,7 @@
 #include <limits.h>
 #include <sched.h>
 #include <errno.h>
+#include <inttypes.h>
 
 #include "cpu_affinity.h"
 #include "common_main.h"
@@ -123,7 +124,8 @@ void run_tsp (int nb_threads, int nb_towns, int seed, int nb_clusters, char* mac
 	uint64_t end = get_time();
     uint64_t exec_time = diff_time(start, end);
     TRACE(end, -1, -1, ENDING_EXECUTION);
-	printf ("%15lu\t%5d\t%2d\t%2d\t%5d\t%2d\t%8d", 
+
+	printf ("%" PRIu64 "\t%5d\t%2d\t%2d\t%5d\t%2d\t%8d", 
 		exec_time, min_distance,nb_threads, nb_towns, seed, nb_clusters, nb_partitions);
 }
 

@@ -9,9 +9,9 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/linux/arm/bin)
 set(CMAKE_C_COMPILER arm-linux-gnueabi-gcc)
 
 # source files
-file(GLOB source_files "${CMAKE_BINARY_DIR}/src/*" "${CMAKE_BINARY_DIR}/linux/src/pthreads/*")
+file(GLOB source_files_pthreads "${CMAKE_BINARY_DIR}/src/*" "${CMAKE_BINARY_DIR}/linux/src/*" "${CMAKE_BINARY_DIR}/linux/src/pthreads/*")
 
-include_directories(${CMAKE_BINARY_DIR}/src)
+include_directories(${CMAKE_BINARY_DIR}/linux/src/ ${CMAKE_BINARY_DIR}/src)
 
 # linker
 link_libraries("-lm -lpthread")
@@ -34,12 +34,12 @@ if (SRAND)
 endif(SRAND)
 
 # sequential version
-add_executable(tsp_seq_arm ${source_files})
+add_executable(tsp_seq_arm ${source_files_pthreads})
 
 # lock-based version
-add_executable(tsp_lock_arm ${source_files})
+add_executable(tsp_lock_arm ${source_files_pthreads})
 set_target_properties(tsp_lock_arm PROPERTIES COMPILE_FLAGS "-DMT")
 
 # cas-based version
-#add_executable(tsp_cas_arm ${source_files})
+#add_executable(tsp_cas_arm ${source_files_pthreads})
 #set_target_properties(tsp_cas_arm PROPERTIES COMPILE_FLAGS "-DMT -DCAS")
