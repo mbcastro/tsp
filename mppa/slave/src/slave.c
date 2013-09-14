@@ -1,8 +1,8 @@
-#include <mppa/osconfig.h>
-
 #include "tsp_mppa.h"
 
 static int nb_clusters;
+static int cluster_id;
+
 MUTEX_CREATE(min_slave_to_master_lock, static);
 
 void callback_slave (mppa_sigval_t sigval);
@@ -20,7 +20,8 @@ int main(int argc, char **argv) {
 	int nb_towns = atoi(argv[1]);
 	int seed = atoi(argv[2]);
 	nb_clusters = atoi(argv[3]);
-	
+	cluster_id =  atoi(argv[4]);
+
 	run_tsp(nb_threads, nb_towns, seed, nb_clusters, NULL);
 
 	free(comm_buffer);
@@ -32,7 +33,7 @@ int main(int argc, char **argv) {
 void run_tsp (int nb_threads, int nb_towns, int seed, int nb_clusters, char* machine) {
 	int i;	
 	MUTEX_INIT(min_slave_to_master_lock);
-	int cluster_id = __k1_get_cluster_id();
+	//int cluster_id = __k1_get_cluster_id();
 
 	comm_buffer_size = (nb_clusters + 1) * sizeof(int);
 	comm_buffer = (int *) malloc(comm_buffer_size);

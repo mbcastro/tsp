@@ -1,3 +1,4 @@
+#include <mppa/osconfig.h>
 #include "tsp_mppa.h"
 
 void set_path_name(char *path, char *template_path, int rx, int tag) {

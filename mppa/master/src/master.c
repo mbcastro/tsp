@@ -1,4 +1,4 @@
-#include <mppa/osconfig.h>
+//#include <mppa/osconfig.h>
 
 #include "tsp_mppa.h"
 #include "common_main.h"
@@ -66,6 +66,7 @@ void run_tsp (int nb_threads, int nb_towns, int seed, int nb_clusters, char* mac
 
 	LOG("Spawning nb_clusters.\n");
   	for (rank = 0; rank < nb_clusters; rank++) {
+	        sprintf(argv[4], "%d", rank);
 		pid = mppa_spawn(rank, NULL, "tsp_lock_mppa_slave", (const char **)argv, NULL);
 		assert(pid >= 0);
 	}
