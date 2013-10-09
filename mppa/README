@@ -1,0 +1,6 @@
+Input params:
+      <nb_threads> <nb_towns> <seed> <nb_partitions>
+
+Example to run on MPPA:
+
+$ ./run_mppa.sh bin/tsp_lock_mppa.mpk tsp_lock_mppa_master 16 10 123 16
