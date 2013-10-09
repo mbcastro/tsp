@@ -5,10 +5,10 @@
 static uint64_t residual_error = 0;
 
 void init_time(void) {
-  uint64_t t1, t2;
-  t1 = get_time();
-  t2 = get_time();
-  residual_error = t2 - t1;
+	uint64_t t1, t2;
+	t1 = get_time();
+	t2 = get_time();
+	residual_error = t2 - t1;
 }
 
 inline uint64_t get_time(void) {
