@@ -55,9 +55,10 @@ void run_tsp (int nb_threads, int nb_towns, int seed, int nb_clusters, char* mac
 	for(i = 0; i < nb_clusters; i++)
 		rqueue_partition_response[i] = mppa_create_write_rqueue(sizeof(partition_interval_t), i, i + 72, "128", i + 72 + MAX_CLUSTERS);
 
-	char **argv = (char**) malloc(sizeof (char*) * 4);
-	for (i = 0; i < 4; i++)
+	char **argv = (char**) malloc(sizeof (char*) * 6);
+	for (i = 0; i < 5; i++)
 		argv[i] = (char*) malloc (sizeof (char) * 10);
+	argv[5] = NULL;
 
 	sprintf(argv[0], "%d", nb_threads); 
 	sprintf(argv[1], "%d", nb_towns);
@@ -66,7 +67,7 @@ void run_tsp (int nb_threads, int nb_towns, int seed, int nb_clusters, char* mac
 
 	LOG("Spawning nb_clusters.\n");
   	for (rank = 0; rank < nb_clusters; rank++) {
-	        sprintf(argv[4], "%d", rank);
+	    sprintf(argv[4], "%d", rank);
 		pid = mppa_spawn(rank, NULL, "tsp_lock_mppa_slave", (const char **)argv, NULL);
 		assert(pid >= 0);
 	}
@@ -74,7 +75,9 @@ void run_tsp (int nb_threads, int nb_towns, int seed, int nb_clusters, char* mac
 	wait_barrier (barrier); //init barrier
 
 	//TO SOLVE THE BUG!!!
+	LOG("Init rqueue_partition\n");
 	mppa_init_read_rqueue(rqueue_partition_request, nb_clusters);
+	LOG("Init completed rqueue_partition\n");
 
 	//Manage partition requests
 	while(finished_clusters < nb_clusters) {
