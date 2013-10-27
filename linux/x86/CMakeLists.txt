@@ -49,8 +49,8 @@ add_executable(tsp_lock ${source_files_pthreads})
 set_target_properties(tsp_lock PROPERTIES COMPILE_FLAGS "-DMT")
 
 # trace converter
-add_executable(trace_converter ${source_files_trace})
-TARGET_LINK_LIBRARIES(trace_converter poti)
+# add_executable(trace_converter ${source_files_trace})
+# TARGET_LINK_LIBRARIES(trace_converter poti)
 
 # mpi lock-based version
 # add_executable(tsp_mpi ${source_files_mpi})
